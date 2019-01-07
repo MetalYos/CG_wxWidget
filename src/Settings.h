@@ -19,4 +19,6 @@ public:
     static int SelectedAction;
     static bool SelectedAxis[3];
     static int SelectedSpace;
+    static double MouseSensitivity[3];
+    static double MinScaleFactor;
 };

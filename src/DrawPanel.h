@@ -18,6 +18,6 @@ public:
     void OnMouseLeftRelease(wxMouseEvent& event);
 
 private:
-    wxPoint m_MousePosAtClick;
-    bool isMouseLeftButtonClicked = false;
+    wxPoint m_MousePrevPos;
+    bool m_IsMouseLeftButtonClicked = false;
 };

@@ -1,5 +1,5 @@
-#include "main.h"
-#include "mainwindow.h"
+#include "Main.h"
+#include "MainWindow.h"
 
 IMPLEMENT_APP(MyApp)
 

@@ -1,4 +1,4 @@
-#include "mainwindow.h"
+#include "MainWindow.h"
 #include "Scene.h"
 #include "Settings.h"
 
@@ -263,7 +263,7 @@ void MainWindow::CreateToolBar()
     toolbar->AddSeparator();
     toolbar->AddCheckTool(ID_SPACE_OBJECT, wxT("Object Space"), spaceObj);
     toolbar->AddCheckTool(ID_SPACE_WORLD, wxT("World Space"), spaceWorld);
-    toolbar->AddCheckTool(ID_SPACE_WORLD, wxT("View Space"), spaceView);
+    toolbar->AddCheckTool(ID_SPACE_VIEW, wxT("View Space"), spaceView);
     
     toolbar->Realize();
 

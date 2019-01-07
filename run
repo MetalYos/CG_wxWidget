@@ -1,4 +1,4 @@
 #!/bin/bash
 
 cd bin
-./software_renderer
+./software_renderer.out
