@@ -1,14 +1,11 @@
 #include "MainWindow.h"
 #include "Scene.h"
-#include "Settings.h"
 
 MainWindow::MainWindow(const wxString& title)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(1280, 720))
 {
     // Initialize Log
     Log::Init();
-
-    InitializeSettings();
 
     m_MainSizer = new wxBoxSizer(wxVERTICAL);
 
@@ -51,11 +48,14 @@ void MainWindow::OnUpdateUI(wxUpdateUIEvent& event)
     int id = event.GetId();
     switch (id)
     {
-        case ID_SWITCH_TO_ORTHO:
+        case ID_VIEW_ORTHO:
             OnSwitchToOrthoUI(event);
             break;
-        case ID_SWITCH_TO_PERSP:
+        case ID_VIEW_PERSP:
             OnSwitchToPerspUI(event);
+            break;
+        case ID_VIEW_BACKFACE:
+            OnBackFaceCullingUI(event);
             break;
         case ID_ACTION_TRANSLATE:
             OnSelectTranslateUI(event);
@@ -87,9 +87,8 @@ void MainWindow::OnSwitchProjection(wxCommandEvent& event)
 {
     LOG_TRACE("MainWindow::OnSwitchProjection: Switching Projection");
     int id = event.GetId();
-    Scene::GetInstance().GetCamera()->SwitchToProjection(id == ID_SWITCH_TO_PERSP);
-    Refresh();
-    Update();
+    Scene::GetInstance().GetCamera()->SwitchToProjection(id == ID_VIEW_PERSP);
+    INVALIDATE();
 }
 
 void MainWindow::OnSwitchToOrthoUI(wxUpdateUIEvent& event)
@@ -102,6 +101,17 @@ void MainWindow::OnSwitchToPerspUI(wxUpdateUIEvent& event)
 {
     bool isPerspective = Scene::GetInstance().GetCamera()->IsPerpsective();
     event.Check(isPerspective);
+}
+
+void MainWindow::OnBackFaceCulling(wxCommandEvent& event)
+{
+    Settings::IsBackFaceCullingEnabled = !Settings::IsBackFaceCullingEnabled;
+    INVALIDATE();
+}
+
+void MainWindow::OnBackFaceCullingUI(wxUpdateUIEvent& event)
+{
+    event.Check(Settings::IsBackFaceCullingEnabled);
 }
 
 void MainWindow::OnChangeAction(wxCommandEvent& event)
@@ -157,13 +167,6 @@ void MainWindow::OnSelectViewSpaceUI(wxUpdateUIEvent& event)
 }
 
 /**************************** Private Methods ****************************/
-void MainWindow::InitializeSettings()
-{
-    Settings::SelectedAction = ID_ACTION_TRANSLATE;
-    Settings::SelectedAxis[0] = true;
-    Settings::SelectedAxis[1] = Settings::SelectedAxis[2] = false;
-    Settings::SelectedSpace = ID_SPACE_OBJECT;
-}
 
 void MainWindow::CreateMenuBar()
 {
@@ -188,14 +191,17 @@ void MainWindow::CreateMenuBar()
     wxMenu* view = new wxMenu();
     // Create Projection SubMenu
     wxMenu* projection = new wxMenu();
-    projection->AppendCheckItem(ID_SWITCH_TO_ORTHO, wxT("Orthographic"));
-    Connect(ID_SWITCH_TO_ORTHO, wxEVT_COMMAND_MENU_SELECTED, 
+    projection->AppendCheckItem(ID_VIEW_ORTHO, wxT("Orthographic"));
+    Connect(ID_VIEW_ORTHO, wxEVT_COMMAND_MENU_SELECTED, 
         wxCommandEventHandler(MainWindow::OnSwitchProjection));
-    projection->AppendCheckItem(ID_SWITCH_TO_PERSP, wxT("Perspective"));
-    Connect(ID_SWITCH_TO_PERSP, wxEVT_COMMAND_MENU_SELECTED, 
+    projection->AppendCheckItem(ID_VIEW_PERSP, wxT("Perspective"));
+    Connect(ID_VIEW_PERSP, wxEVT_COMMAND_MENU_SELECTED, 
         wxCommandEventHandler(MainWindow::OnSwitchProjection));
     // Add Projection SubMenu to View Menu
     view->AppendSubMenu(projection, wxT("&Projection"));
+    view->AppendCheckItem(ID_VIEW_BACKFACE, wxT("&BackFace Culling"));
+    Connect(ID_VIEW_BACKFACE, wxEVT_COMMAND_MENU_SELECTED, 
+        wxCommandEventHandler(MainWindow::OnBackFaceCulling));
     // Append the View Menu to the menubar
     menubar->Append(view, wxT("&View"));
 
@@ -252,6 +258,7 @@ void MainWindow::CreateToolBar()
     wxBitmap open(wxT("icons/open.png"), wxBITMAP_TYPE_PNG);
     wxBitmap ortho(wxT("icons/orthographic.png"), wxBITMAP_TYPE_PNG);
     wxBitmap persp(wxT("icons/perspective.png"), wxBITMAP_TYPE_PNG);
+    wxBitmap backface(wxT("icons/back_face.png"), wxBITMAP_TYPE_PNG);
     wxBitmap translate(wxT("icons/translate.png"), wxBITMAP_TYPE_PNG);
     wxBitmap scale(wxT("icons/scale.png"), wxBITMAP_TYPE_PNG);
     wxBitmap rotate(wxT("icons/rotate.png"), wxBITMAP_TYPE_PNG);
@@ -268,8 +275,9 @@ void MainWindow::CreateToolBar()
     toolbar->AddTool(wxID_NEW, wxT("New Scene"), newb);
     toolbar->AddTool(wxID_OPEN, wxT("Open Model"), open);
     toolbar->AddSeparator();
-    toolbar->AddCheckTool(ID_SWITCH_TO_ORTHO, wxT("Switch to Orthographic Projection"), ortho);
-    toolbar->AddCheckTool(ID_SWITCH_TO_PERSP, wxT("Switch to Perspective Projection"), persp);
+    toolbar->AddCheckTool(ID_VIEW_ORTHO, wxT("Switch to Orthographic Projection"), ortho);
+    toolbar->AddCheckTool(ID_VIEW_PERSP, wxT("Switch to Perspective Projection"), persp);
+    toolbar->AddCheckTool(ID_VIEW_BACKFACE, wxT("Enable/Disable BackFace Culling"), backface);
     toolbar->AddSeparator();
     toolbar->AddCheckTool(ID_ACTION_TRANSLATE, wxT("Translate"), translate);
     toolbar->AddCheckTool(ID_ACTION_SCALE, wxT("Scale"), scale);

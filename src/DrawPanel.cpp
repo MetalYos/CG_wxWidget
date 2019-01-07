@@ -1,6 +1,5 @@
 #include "DrawPanel.h"
 #include "Scene.h"
-#include "Settings.h"
 
 DrawPanel::DrawPanel(wxFrame* parent)
     : wxPanel(parent)
@@ -147,8 +146,7 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
         }
     }
 
-    Refresh();
-    Update();
+    INVALIDATE();
 }
 
 void DrawPanel::OnMouseLeftRelease(wxMouseEvent& event)

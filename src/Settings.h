@@ -1,21 +1,27 @@
 #pragma once
 
-const int ID_SWITCH_TO_PERSP = 101;
-const int ID_SWITCH_TO_ORTHO = 102;
-const int ID_ACTION_TRANSLATE = 103;
-const int ID_ACTION_SCALE = 104;
-const int ID_ACTION_ROTATE = 105;
-const int ID_AXIS_X = 106;
-const int ID_AXIS_Y = 107;
-const int ID_AXIS_Z = 108;
-const int ID_SPACE_OBJECT = 109;
-const int ID_SPACE_WORLD = 110;
-const int ID_SPACE_VIEW = 111;
+enum CustomIDs
+{
+    ID_VIEW_PERSP = 101,
+    ID_VIEW_ORTHO,
+    ID_VIEW_BACKFACE,
+    ID_ACTION_TRANSLATE,
+    ID_ACTION_SCALE,
+    ID_ACTION_ROTATE,
+    ID_AXIS_X,
+    ID_AXIS_Y,
+    ID_AXIS_Z,
+    ID_SPACE_OBJECT,
+    ID_SPACE_WORLD,
+    ID_SPACE_VIEW
+};
 
+#define INVALIDATE() Refresh(); Update();
 
 class Settings
 {
 public:
+    static bool IsBackFaceCullingEnabled;
     static int SelectedAction;
     static bool SelectedAxis[3];
     static int SelectedSpace;

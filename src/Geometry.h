@@ -10,6 +10,7 @@ struct Polygon
 {
     std::vector<Vertex*> Vertices;
     Vec4 Normal;
+    Vec4 Center;
 };
 
 struct Vertex

@@ -15,6 +15,7 @@
 
 // Log
 #include "Log.h"
+#include "Settings.h"
 
 // My header files
 #include "ALMath.h"

@@ -71,26 +71,16 @@ void Scene::Draw()
     blackCol.Set(wxT("#000000"));
     renderer.DrawBackgeound(blackCol);
 
-    wxColour col;
-    col.Set(wxT("#FFFFFF"));
-
     Mat4 camTransform = camera->GetTransform();
     Mat4 projection = camera->GetProjection();
 
     for (Model* model : models)
     {
-        Mat4 modelTransform = model->GetTransform();
+        Vec4 colorVec = Vec4(255, 255, 255);
+        wxColour color((unsigned int)colorVec[0], (unsigned int)colorVec[1], 
+        (unsigned int)colorVec[2]);
 
-        auto geos = model->GetGeometries();
-        for (Geometry* geo : geos)
-        {
-            for (Polygon* poly : geo->Polygons)
-            {
-                DrawPolygon(poly, model, modelTransform, camTransform, projection, col);
-            }
-        }
-
-        DrawOrigin(Vec4(0.0, 0.0, 0.0), modelTransform, camTransform, projection);
+        DrawModel(model, camTransform, projection, color);
     }
 }
 
@@ -123,6 +113,10 @@ void Scene::DrawEdge(const Vec4& p0, const Vec4& p1, const Mat4& modelTransform,
 void Scene::DrawPolygon(Polygon* poly, Model* model, const Mat4& modelTransform, 
     const Mat4& camTransform, const Mat4& projection, const wxColour& color)
 {
+    if (Settings::IsBackFaceCullingEnabled && 
+        IsBackFace(poly, modelTransform, camTransform))
+        return;
+
     for (unsigned int i = 0; i < poly->Vertices.size(); i++)
     {
         // Get vertices positions in object space
@@ -131,6 +125,23 @@ void Scene::DrawPolygon(Polygon* poly, Model* model, const Mat4& modelTransform,
 
         DrawEdge(pos1, pos2, modelTransform, camTransform, projection, color);
     }
+}
+
+void Scene::DrawModel(Model* model, const Mat4& camTransform, const Mat4& projection, 
+    const wxColour& color)
+{
+    Mat4 modelTransform = model->GetTransform();
+
+    auto geos = model->GetGeometries();
+    for (Geometry* geo : geos)
+    {
+        for (Polygon* poly : geo->Polygons)
+        {
+            DrawPolygon(poly, model, modelTransform, camTransform, projection, color);
+        }
+    }
+
+    DrawOrigin(Vec4(0.0, 0.0, 0.0), modelTransform, camTransform, projection);
 }
 
 void Scene::DrawOrigin(const Vec4& origin, const Mat4& modelTransform, 
@@ -164,4 +175,18 @@ void Scene::DrawOrigin(const Vec4& origin, const Mat4& modelTransform,
     pos2 = origin + Vec4(0.0, 0.0, 1.0) * sizeFactor;
 
     DrawEdge(pos1, pos2, modelTransform, camTransform, projection, color, 1);
+}
+
+bool Scene::IsBackFace(Polygon* p, const Mat4& modelTransform, const Mat4& camTransform)
+{
+    Vec4 normal = p->Normal;
+    normal[3] = 0.0;
+
+    // Transform normal and poly center to view space
+    normal = normal * modelTransform * camTransform;
+    Vec4 center = p->Center * modelTransform * camTransform;
+
+    if (Vec4::Dot3(center, normal) > 0)
+        return true;
+    return false;
 }

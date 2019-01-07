@@ -13,10 +13,12 @@ public:
     void OnDrawingPanelPaint(wxPaintEvent& event);
     void OnUpdateUI(wxUpdateUIEvent& event);
 
-    // Switch projection events
+    // View options events
     void OnSwitchProjection(wxCommandEvent& event);
     void OnSwitchToOrthoUI(wxUpdateUIEvent& event);
     void OnSwitchToPerspUI(wxUpdateUIEvent& event);
+    void OnBackFaceCulling(wxCommandEvent& event);
+    void OnBackFaceCullingUI(wxUpdateUIEvent& event);
 
     // Action option events
     void OnChangeAction(wxCommandEvent& event);
@@ -35,7 +37,6 @@ public:
     void OnSelectViewSpaceUI(wxUpdateUIEvent& event);
 
 private:
-    void InitializeSettings();
     void CreateMenuBar();
     void CreateToolBar();
     void CreateDrawingPanel();

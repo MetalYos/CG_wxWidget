@@ -119,6 +119,10 @@ void Model::LoadFromFile(const std::string& filename)
             // Calculate Normal
             poly->Normal = CalculatePolyNormal(poly);
 
+            // Calculate center
+            poly->Center /= poly->Vertices.size();
+            poly->Center[3] = 1.0;
+
             // Add poly to polygons vector
             geo->Polygons.push_back(poly);
         }
@@ -266,4 +270,7 @@ void Model::CalculateVertexNormals(Geometry* geo)
 
     // Add vertex to poly
     poly->Vertices.push_back(vert);
+
+    // Add the vertex position to the center calculation
+    poly->Center += VertexPositions[posID];
  }
