@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include "Scene.h"
+#include "CAnimationDialog.h"
 
 MainWindow::MainWindow(const wxString& title)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(1280, 720))
@@ -166,6 +167,12 @@ void MainWindow::OnSelectViewSpaceUI(wxUpdateUIEvent& event)
     event.Check(Settings::SelectedSpace == ID_SPACE_VIEW);
 }
 
+void MainWindow::OnAnimationSettings(wxCommandEvent& event)
+{
+    AnimationDialog* dlg = new AnimationDialog("Animation Options");
+    dlg->ShowModal();
+}
+
 /**************************** Private Methods ****************************/
 
 void MainWindow::CreateMenuBar()
@@ -245,6 +252,18 @@ void MainWindow::CreateMenuBar()
     actions->AppendSubMenu(space, wxT("&Space"));
     // Append the Actions Menu to the menubar
     menubar->Append(actions, wxT("&Actions"));
+
+    // Create Animation Menu
+    wxMenu* animation = new wxMenu();
+    animation->Append(ID_ANIMATION_SETTINGS, wxT("&Settings..."));
+    Connect(ID_ANIMATION_SETTINGS, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationSettings));
+    animation->AppendCheckItem(ID_ANIMATION_START_RECORDING, wxT("Start &Recording"));
+    animation->AppendCheckItem(ID_ANIMATION_STOP_RECORDING, wxT("Stop Recording"));
+    animation->AppendSeparator();
+    animation->Append(ID_ANIMATION_START_PLAYING, wxT("Start &Playing"));
+    // Append the Animation Menu to the menubar
+    menubar->Append(animation, wxT("A&nimation"));
 
     SetMenuBar(menubar);
 }

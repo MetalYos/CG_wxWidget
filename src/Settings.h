@@ -13,7 +13,14 @@ enum CustomIDs
     ID_AXIS_Z,
     ID_SPACE_OBJECT,
     ID_SPACE_WORLD,
-    ID_SPACE_VIEW
+    ID_SPACE_VIEW,
+    ID_ANIMATION_SETTINGS,
+    ID_ANIMATION_START_RECORDING,
+    ID_ANIMATION_STOP_RECORDING,
+    ID_ANIMATION_START_PLAYING,
+    IDC_ANIMATION_TEXTCTRL_FPS,
+    IDC_ANIMATION_RADIO_LINEAR,
+    IDC_ANIMATION_RADIO_BEZIER
 };
 
 #define INVALIDATE() Refresh(); Update();
@@ -27,4 +34,8 @@ public:
     static int SelectedSpace;
     static double MouseSensitivity[3];
     static double MinScaleFactor;
+    static bool IsRecording;
+    static bool IsPlayingAnimation;
+    static int FramesPerSeconds;
+    static bool FramesInterpolation[2]; // Linear, Bezier
 };

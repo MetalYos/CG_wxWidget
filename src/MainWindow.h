@@ -36,6 +36,9 @@ public:
     void OnSelectWorldSpaceUI(wxUpdateUIEvent& event);
     void OnSelectViewSpaceUI(wxUpdateUIEvent& event);
 
+    // Animation menu events
+    void OnAnimationSettings(wxCommandEvent& event);
+
 private:
     void CreateMenuBar();
     void CreateToolBar();
