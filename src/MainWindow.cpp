@@ -46,20 +46,17 @@ void MainWindow::OnOpenFile(wxCommandEvent& event)
     }
 }
 
-void MainWindow::OnSwitchProjection(wxCommandEvent& event)
-{
-    LOG_TRACE("MainWindow::OnSwitchProjection: Switching Projection");
-    int id = event.GetId();
-    Scene::GetInstance().GetCamera()->SwitchToProjection(id == ID_SWITCH_TO_PERSP);
-    Refresh();
-    Update();
-}
-
 void MainWindow::OnUpdateUI(wxUpdateUIEvent& event)
 {
     int id = event.GetId();
     switch (id)
     {
+        case ID_SWITCH_TO_ORTHO:
+            OnSwitchToOrthoUI(event);
+            break;
+        case ID_SWITCH_TO_PERSP:
+            OnSwitchToPerspUI(event);
+            break;
         case ID_ACTION_TRANSLATE:
             OnSelectTranslateUI(event);
             break;
@@ -84,6 +81,27 @@ void MainWindow::OnUpdateUI(wxUpdateUIEvent& event)
             OnSelectViewSpaceUI(event);
             break;
     }
+}
+
+void MainWindow::OnSwitchProjection(wxCommandEvent& event)
+{
+    LOG_TRACE("MainWindow::OnSwitchProjection: Switching Projection");
+    int id = event.GetId();
+    Scene::GetInstance().GetCamera()->SwitchToProjection(id == ID_SWITCH_TO_PERSP);
+    Refresh();
+    Update();
+}
+
+void MainWindow::OnSwitchToOrthoUI(wxUpdateUIEvent& event)
+{
+    bool isPerspective = Scene::GetInstance().GetCamera()->IsPerpsective();
+    event.Check(!isPerspective);
+}
+
+void MainWindow::OnSwitchToPerspUI(wxUpdateUIEvent& event)
+{
+    bool isPerspective = Scene::GetInstance().GetCamera()->IsPerpsective();
+    event.Check(isPerspective);
 }
 
 void MainWindow::OnChangeAction(wxCommandEvent& event)
@@ -170,10 +188,10 @@ void MainWindow::CreateMenuBar()
     wxMenu* view = new wxMenu();
     // Create Projection SubMenu
     wxMenu* projection = new wxMenu();
-    projection->Append(ID_SWITCH_TO_ORTHO, wxT("Orthographic"));
+    projection->AppendCheckItem(ID_SWITCH_TO_ORTHO, wxT("Orthographic"));
     Connect(ID_SWITCH_TO_ORTHO, wxEVT_COMMAND_MENU_SELECTED, 
         wxCommandEventHandler(MainWindow::OnSwitchProjection));
-    projection->Append(ID_SWITCH_TO_PERSP, wxT("Perspective"));
+    projection->AppendCheckItem(ID_SWITCH_TO_PERSP, wxT("Perspective"));
     Connect(ID_SWITCH_TO_PERSP, wxEVT_COMMAND_MENU_SELECTED, 
         wxCommandEventHandler(MainWindow::OnSwitchProjection));
     // Add Projection SubMenu to View Menu
@@ -250,8 +268,8 @@ void MainWindow::CreateToolBar()
     toolbar->AddTool(wxID_NEW, wxT("New Scene"), newb);
     toolbar->AddTool(wxID_OPEN, wxT("Open Model"), open);
     toolbar->AddSeparator();
-    toolbar->AddTool(ID_SWITCH_TO_ORTHO, wxT("Switch to Orthographic Projection"), ortho);
-    toolbar->AddTool(ID_SWITCH_TO_PERSP, wxT("Switch to Perspective Projection"), persp);
+    toolbar->AddCheckTool(ID_SWITCH_TO_ORTHO, wxT("Switch to Orthographic Projection"), ortho);
+    toolbar->AddCheckTool(ID_SWITCH_TO_PERSP, wxT("Switch to Perspective Projection"), persp);
     toolbar->AddSeparator();
     toolbar->AddCheckTool(ID_ACTION_TRANSLATE, wxT("Translate"), translate);
     toolbar->AddCheckTool(ID_ACTION_SCALE, wxT("Scale"), scale);

@@ -11,8 +11,12 @@ public:
     void OnQuit(wxCommandEvent& event);
     void OnOpenFile(wxCommandEvent& event);
     void OnDrawingPanelPaint(wxPaintEvent& event);
-    void OnSwitchProjection(wxCommandEvent& event);
     void OnUpdateUI(wxUpdateUIEvent& event);
+
+    // Switch projection events
+    void OnSwitchProjection(wxCommandEvent& event);
+    void OnSwitchToOrthoUI(wxUpdateUIEvent& event);
+    void OnSwitchToPerspUI(wxUpdateUIEvent& event);
 
     // Action option events
     void OnChangeAction(wxCommandEvent& event);

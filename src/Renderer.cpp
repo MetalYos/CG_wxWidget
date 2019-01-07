@@ -49,7 +49,40 @@ const Mat4& Renderer::GetToScreenMatrix() const
     return m_ToScreen;
 }
 
-void Renderer::DrawLine(const Point& p0, const Point& p1, const wxColour& color)
+void Renderer::DrawPixel(const Point& p, const wxColour& color, int thickness)
+{
+    m_DC->SetPen(wxPen(color, 1));
+
+    if (thickness == 0)
+        m_DC->DrawPoint(p.X, p.Y);
+    else
+    {
+        // Draw thickness
+		int startX = p.X;
+		int endX = p.X;
+		int startY = p.Y;
+		int endY = p.Y;
+		for (int i = thickness; i > 0; i--)
+		{
+			if ((startX == p.X) && (p.X - i >= 0))
+				startX = p.X - i;
+			if ((endX == p.X) && (p.X + i < m_Width))
+				endX = p.X + i;
+			if ((startY == p.Y) && (p.Y - i >= 0))
+				startY = p.Y - i;
+			if ((endY == p.Y) && (p.Y + i < m_Height))
+				endY = p.Y + i;
+		}
+
+		for (int x = startX; x <= endX; x++)
+		{
+			for (int y = startY; y <= endY; y++)
+				m_DC->DrawPoint(x, y);
+		}
+    }
+}
+
+void Renderer::DrawLine(const Point& p0, const Point& p1, const wxColour& color, int thickness)
 {
     if (m_DC == NULL)
         return;
@@ -68,10 +101,8 @@ void Renderer::DrawLine(const Point& p0, const Point& p1, const wxColour& color)
     // if y1 == y2, then it does not matter what we set here
     signed char const iy((delta_y > 0) - (delta_y < 0));
     delta_y = std::abs(delta_y) << 1;
-    
-    m_DC->SetPen(wxPen(color, 1));
 
-    m_DC->DrawPoint(x1, y1);
+    DrawPixel(Point(x1, y1), color, thickness);
  
     if (delta_x >= delta_y)
     {
@@ -91,7 +122,7 @@ void Renderer::DrawLine(const Point& p0, const Point& p1, const wxColour& color)
             error += delta_y;
             x1 += ix;
  
-            m_DC->DrawPoint(x1, y1);
+            DrawPixel(Point(x1, y1), color, thickness);
         }
     }
     else
@@ -112,7 +143,7 @@ void Renderer::DrawLine(const Point& p0, const Point& p1, const wxColour& color)
             error += delta_x;
             y1 += iy;
  
-            m_DC->DrawPoint(x1, y1);
+            DrawPixel(Point(x1, y1), color, thickness);
         }
     }
 }

@@ -7,7 +7,7 @@ struct Point
     int X;
     int Y;
 
-    Point(int x, int y) : X(x), Y(y) {}
+    Point(int x = 0, int y = 0) : X(x), Y(y) {}
 };
 
 class Renderer
@@ -27,11 +27,11 @@ public:
 
     const Mat4& GetToScreenMatrix() const;
 
-    void DrawLine(const Point& p0, const Point& p1, const wxColour& color);
+    void DrawPixel(const Point& p, const wxColour& color, int thickness = 0);
+    void DrawLine(const Point& p0, const Point& p1, const wxColour& color, int thickness = 0);
     void DrawBackgeound(const wxColour& color);
 
 private:
-    void SetAspectRatio();
     void BuildToScreenMatrix();
 
 private:

@@ -72,7 +72,7 @@ void Scene::Draw()
     renderer.DrawBackgeound(blackCol);
 
     wxColour col;
-    col.Set(wxT("#0000FF"));
+    col.Set(wxT("#FFFFFF"));
 
     Mat4 camTransform = camera->GetTransform();
     Mat4 projection = camera->GetProjection();
@@ -89,7 +89,35 @@ void Scene::Draw()
                 DrawPolygon(poly, model, modelTransform, camTransform, projection, col);
             }
         }
+
+        DrawOrigin(Vec4(0.0, 0.0, 0.0), modelTransform, camTransform, projection);
     }
+}
+
+void Scene::DrawEdge(const Vec4& p0, const Vec4& p1, const Mat4& modelTransform, 
+    const Mat4& camTransform, const Mat4& projection, const wxColour& color, int thickness)
+{
+    // Get vertices positions in object space
+    Vec4 pos1 = p0;
+    Vec4 pos2 = p1;
+
+    // Transform vertices from object space to NDC
+    pos1 = pos1 * modelTransform * camTransform * projection;
+    pos2 = pos2 * modelTransform * camTransform * projection;
+
+    // Divide by w
+    pos1 /= pos1[3];
+    pos2 /= pos2[3];
+
+    // Transform to screen space
+    pos1 = pos1 * renderer.GetToScreenMatrix();
+    pos2 = pos2 * renderer.GetToScreenMatrix();
+
+    Point pix1((int)pos1[0], (int)pos1[1]);
+    Point pix2((int)pos2[0], (int)pos2[1]);
+    
+    // Draw Edge
+    renderer.DrawLine(pix1, pix2, color, thickness);
 }
 
 void Scene::DrawPolygon(Polygon* poly, Model* model, const Mat4& modelTransform, 
@@ -101,22 +129,39 @@ void Scene::DrawPolygon(Polygon* poly, Model* model, const Mat4& modelTransform,
         Vec4 pos1 = model->VertexPositions[poly->Vertices[i]->PositionID];
         Vec4 pos2 = model->VertexPositions[poly->Vertices[(i + 1) % poly->Vertices.size()]->PositionID];
 
-        // Transform vertices from object space to NDC
-        pos1 = pos1 * modelTransform * camTransform * projection;
-        pos2 = pos2 * modelTransform * camTransform * projection;
-
-        // Divide by w
-        pos1 /= pos1[3];
-        pos2 /= pos2[3];
-
-        // Transform to screen space
-        pos1 = pos1 * renderer.GetToScreenMatrix();
-        pos2 = pos2 * renderer.GetToScreenMatrix();
-
-        Point pix1((int)pos1[0], (int)pos1[1]);
-        Point pix2((int)pos2[0], (int)pos2[1]);
-        
-        // Draw Edge
-        renderer.DrawLine(pix1, pix2, color);
+        DrawEdge(pos1, pos2, modelTransform, camTransform, projection, color);
     }
+}
+
+void Scene::DrawOrigin(const Vec4& origin, const Mat4& modelTransform, 
+    const Mat4& camTransform, const Mat4& projection)
+{
+    double sizeFactor = 1.0;
+    // Draw X axis
+    Vec4 colorVec(255, 0, 0);
+    wxColour color((unsigned int)colorVec[0], (unsigned int)colorVec[1], 
+        (unsigned int)colorVec[2]);
+
+    Vec4 pos1 = origin;
+    Vec4 pos2 = origin + Vec4(1.0, 0.0, 0.0) * sizeFactor;
+
+    DrawEdge(pos1, pos2, modelTransform, camTransform, projection, color, 1);
+
+    // Draw Y axis
+    colorVec = Vec4(0, 255, 0);
+    color = wxColour((unsigned int)colorVec[0], (unsigned int)colorVec[1], 
+        (unsigned int)colorVec[2]);
+
+    pos2 = origin + Vec4(0.0, 1.0, 0.0) * sizeFactor;
+
+    DrawEdge(pos1, pos2, modelTransform, camTransform, projection, color, 1);
+
+    // Draw Z axis
+    colorVec = Vec4(0, 0, 255);
+    color = wxColour((unsigned int)colorVec[0], (unsigned int)colorVec[1], 
+        (unsigned int)colorVec[2]);
+
+    pos2 = origin + Vec4(0.0, 0.0, 1.0) * sizeFactor;
+
+    DrawEdge(pos1, pos2, modelTransform, camTransform, projection, color, 1);
 }
