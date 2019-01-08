@@ -190,3 +190,22 @@ bool Scene::IsBackFace(Polygon* p, const Mat4& modelTransform, const Mat4& camTr
         return true;
     return false;
 }
+
+void Scene::StartRecordingAnimation()
+{
+    anim.ClearAnimation();
+}
+
+void Scene::AddKeyFrame()
+{
+    Frame* frame = new Frame();
+    frame->ModelTransform = models.back()->GetTransform();
+    frame->CamTransform = camera->GetTransform();
+
+    if (anim.GetFrame(0) == NULL)
+        frame->Frame = 0;
+    else
+        frame->Frame = 0; // TODO: Calculate frame using time
+    
+    anim.AddKeyFrame(frame);
+}

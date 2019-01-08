@@ -4,6 +4,7 @@
 #include "Renderer.h"
 #include "Model.h"
 #include "Camera.h"
+#include "Animation.h"
 
 #define SCENE Scene::GetInstance()
 
@@ -26,6 +27,9 @@ class Scene
         Camera* GetCamera();
         Renderer& GetRenderer();
 
+        void StartRecordingAnimation();
+        void AddKeyFrame();
+
         void Resized(int width, int height);
         void Draw();
 
@@ -46,4 +50,5 @@ class Scene
         std::vector<Model*> models;
         Camera* camera;
         Renderer renderer;
+        Animation anim;
 };

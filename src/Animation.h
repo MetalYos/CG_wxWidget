@@ -12,8 +12,19 @@ struct Frame
 class Animation
 {
 public:
+    Animation()
+        : maxFrame(0) {}
+    ~Animation() { ClearAnimation(); }
+
+    void AddKeyFrame(Frame* keyFrame);
     Frame* GetFrame(int frame);
 
-public:
-    std::vector<Frame*> KeyFrames;
+    void ClearAnimation();
+
+private:
+    Frame* GetFrameLinearInterpolation(Frame* before, Frame* after, int frame) const;
+
+private:
+    std::vector<Frame*> keyFrames;
+    int maxFrame;
 };
