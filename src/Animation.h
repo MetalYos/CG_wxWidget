@@ -13,11 +13,16 @@ class Animation
 {
 public:
     Animation()
-        : maxFrame(0) {}
+        : maxFrame(-1), currentFrame(NULL) {}
     ~Animation() { ClearAnimation(); }
 
     void AddKeyFrame(Frame* keyFrame);
     Frame* GetFrame(int frame);
+    int GetLastFrameNumber() const;
+
+    void ResetAnimation();
+    void StepToNextFrame();
+    const Frame* GetCurrentFrame() const;
 
     void ClearAnimation();
 
@@ -27,4 +32,5 @@ private:
 private:
     std::vector<Frame*> keyFrames;
     int maxFrame;
+    Frame* currentFrame;
 };

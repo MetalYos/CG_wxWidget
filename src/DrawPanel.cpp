@@ -2,7 +2,7 @@
 #include "Scene.h"
 
 DrawPanel::DrawPanel(wxFrame* parent)
-    : wxPanel(parent)
+    : wxPanel(parent), m_IsMouseLeftButtonClicked(false)
 {
     Connect(wxEVT_PAINT, wxPaintEventHandler(DrawPanel::OnPaint));
     Connect(wxEVT_ERASE_BACKGROUND, wxEraseEventHandler(DrawPanel::OnEraseBackground));
@@ -38,6 +38,10 @@ void DrawPanel::OnMouseLeftClick(wxMouseEvent& event)
     m_MousePrevPos.y = m_MousePrevPos.y - this->GetScreenPosition().y;
 
     m_IsMouseLeftButtonClicked = true;
+    LOG_TRACE("DrawPanel::OnMouseLeftClick: Clicked on left button of the mouse.");
+
+    if (Settings::IsRecording)
+        m_MouseDownTicks = clock();
 
     event.Skip();
 }
@@ -152,4 +156,10 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
 void DrawPanel::OnMouseLeftRelease(wxMouseEvent& event)
 {
     m_IsMouseLeftButtonClicked = false;
+    if (Settings::IsRecording)
+    {
+        clock_t ticksDiff = clock() - m_MouseDownTicks;
+        double timeDiff = (double)ticksDiff / CLOCKS_PER_SEC;
+        Scene::GetInstance().AddKeyFrame(timeDiff);
+    }
 }

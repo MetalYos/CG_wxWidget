@@ -4,7 +4,7 @@ bool Settings::IsBackFaceCullingEnabled = true;
 int Settings::SelectedAction = ID_ACTION_TRANSLATE;
 bool Settings::SelectedAxis[3] { true, false, false };
 int Settings::SelectedSpace = ID_SPACE_OBJECT;
-double Settings::MouseSensitivity[3] { 100.0, 100.0, 100.0 };
+double Settings::MouseSensitivity[3] { 100.0, 100.0, 20.0 }; // Translate, Scale, Rotate
 double Settings::MinScaleFactor = 0.05;
 bool Settings::IsRecording = false;
 bool Settings::IsPlayingAnimation = false;

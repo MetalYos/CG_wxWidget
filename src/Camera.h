@@ -60,7 +60,7 @@ public:
     const OrthographicParameters& GetOrthographicParameters() const;
     const PerspectiveParameters& GetPerspectiveParameters() const;
 
-    bool IsPerpsective() const;
+    bool IsPerspective() const;
     void SwitchToProjection(bool perspective);
 
     void Translate(const Mat4& T);

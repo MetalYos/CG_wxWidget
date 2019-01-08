@@ -45,8 +45,8 @@ void Scene::Resized(int width, int height)
     renderer.SetHeight(height);
 
     // Update Projection matricies
-    bool isPerspective = camera->IsPerpsective();
-    LOG_TRACE("Scene: Resized: isPerpsective = {0}", isPerspective);
+    bool isPerspective = camera->IsPerspective();
+    LOG_TRACE("Scene: Resized: IsPerspective = {0}", isPerspective);
     PerspectiveParameters perspParams = camera->GetPerspectiveParameters();
     camera->SetPerspective(perspParams.FOV, renderer.GetAspectRatio(), 
         perspParams.Near, perspParams.Far);
@@ -64,12 +64,17 @@ void Scene::Resized(int width, int height)
     }
 }
 
-void Scene::Draw()
+void Scene::DrawBackground()
 {
     // Draw Background
     wxColour blackCol;
     blackCol.Set(wxT("#000000"));
     renderer.DrawBackgeound(blackCol);
+}
+
+void Scene::Draw()
+{
+    DrawBackground();
 
     Mat4 camTransform = camera->GetTransform();
     Mat4 projection = camera->GetProjection();
@@ -80,7 +85,16 @@ void Scene::Draw()
         wxColour color((unsigned int)colorVec[0], (unsigned int)colorVec[1], 
         (unsigned int)colorVec[2]);
 
-        DrawModel(model, camTransform, projection, color);
+        Mat4 modelTransform = model->GetTransform();
+
+        if (Settings::IsPlayingAnimation)
+        {
+            const Frame* currentFrame = anim.GetCurrentFrame();
+            modelTransform = currentFrame->ModelTransform;
+            camTransform = currentFrame->CamTransform;
+        }
+
+        DrawModel(model, modelTransform, camTransform, projection, color);
     }
 }
 
@@ -114,7 +128,7 @@ void Scene::DrawPolygon(Polygon* poly, Model* model, const Mat4& modelTransform,
     const Mat4& camTransform, const Mat4& projection, const wxColour& color)
 {
     if (Settings::IsBackFaceCullingEnabled && 
-        IsBackFace(poly, modelTransform, camTransform))
+        IsBackFace(poly, modelTransform, camTransform, projection))
         return;
 
     for (unsigned int i = 0; i < poly->Vertices.size(); i++)
@@ -127,11 +141,9 @@ void Scene::DrawPolygon(Polygon* poly, Model* model, const Mat4& modelTransform,
     }
 }
 
-void Scene::DrawModel(Model* model, const Mat4& camTransform, const Mat4& projection, 
+void Scene::DrawModel(Model* model, const Mat4& modelTransform, const Mat4& camTransform, const Mat4& projection, 
     const wxColour& color)
 {
-    Mat4 modelTransform = model->GetTransform();
-
     auto geos = model->GetGeometries();
     for (Geometry* geo : geos)
     {
@@ -177,7 +189,8 @@ void Scene::DrawOrigin(const Vec4& origin, const Mat4& modelTransform,
     DrawEdge(pos1, pos2, modelTransform, camTransform, projection, color, 1);
 }
 
-bool Scene::IsBackFace(Polygon* p, const Mat4& modelTransform, const Mat4& camTransform)
+bool Scene::IsBackFace(Polygon* p, const Mat4& modelTransform, const Mat4& camTransform,
+    const Mat4& projection)
 {
     Vec4 normal = p->Normal;
     normal[3] = 0.0;
@@ -186,9 +199,14 @@ bool Scene::IsBackFace(Polygon* p, const Mat4& modelTransform, const Mat4& camTr
     normal = normal * modelTransform * camTransform;
     Vec4 center = p->Center * modelTransform * camTransform;
 
-    if (Vec4::Dot3(center, normal) > 0)
-        return true;
-    return false;
+    if (camera->IsPerspective())
+    {
+        if (Vec4::Dot3(center, normal) > 0)
+            return true;
+        return false;
+    }
+        normal = Vec4::Normalize3(normal * projection);
+	    return normal[2] < 0;
 }
 
 void Scene::StartRecordingAnimation()
@@ -196,8 +214,11 @@ void Scene::StartRecordingAnimation()
     anim.ClearAnimation();
 }
 
-void Scene::AddKeyFrame()
+void Scene::AddKeyFrame(double timeDiff)
 {
+    if (models.size() == 0)
+        return;
+
     Frame* frame = new Frame();
     frame->ModelTransform = models.back()->GetTransform();
     frame->CamTransform = camera->GetTransform();
@@ -205,7 +226,27 @@ void Scene::AddKeyFrame()
     if (anim.GetFrame(0) == NULL)
         frame->Frame = 0;
     else
-        frame->Frame = 0; // TODO: Calculate frame using time
+        frame->Frame = anim.GetLastFrameNumber() + 
+            (int)(timeDiff * (double)Settings::FramesPerSeconds);
     
     anim.AddKeyFrame(frame);
+    LOG_TRACE("Scene::AddKeyFrame: Added KeyFrame at frame: {0}", frame->Frame);
+}
+
+bool Scene::PlayAnimation()
+{
+    if ((models.size() == 0) || anim.GetLastFrameNumber() < 0)
+        return false;
+
+    if (anim.GetCurrentFrame()->Frame == anim.GetLastFrameNumber())
+    {
+        // Animation ended
+        anim.ResetAnimation();
+        Settings::IsPlayingAnimation = false;
+        LOG_TRACE("Scene::PlayAnimation: Finished Playing Animation.");
+        return false;
+    }
+    
+    anim.StepToNextFrame();
+    return true;
 }

@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <ctime>
 
 // wxWidgets
 #include <wx-3.1/wx/wx.h>

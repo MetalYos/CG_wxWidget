@@ -28,7 +28,8 @@ class Scene
         Renderer& GetRenderer();
 
         void StartRecordingAnimation();
-        void AddKeyFrame();
+        void AddKeyFrame(double timeDiff = 0.0);
+        bool PlayAnimation();
 
         void Resized(int width, int height);
         void Draw();
@@ -36,15 +37,17 @@ class Scene
     private:
         Scene();
 
+        void DrawBackground();
         void DrawEdge(const Vec4& p0, const Vec4& p1, const Mat4& modelTransform, 
             const Mat4& camTransform, const Mat4& projection, const wxColour& color, int thickness = 0);
         void DrawPolygon(Polygon* poly, Model* model, const Mat4& modelTransform, 
             const Mat4& camTransform, const Mat4& projection, const wxColour& color);
-        void DrawModel(Model* model, const Mat4& camTransform, const Mat4& projection, 
-            const wxColour& color);
+        void DrawModel(Model* model, const Mat4& modelTransform, const Mat4& camTransform, 
+            const Mat4& projection, const wxColour& color);
         void DrawOrigin(const Vec4& origin, const Mat4& modelTransform, 
             const Mat4& camTransform, const Mat4& projection);
-        bool IsBackFace(Polygon* p, const Mat4& modelTransform, const Mat4& camTransform);
+        bool IsBackFace(Polygon* p, const Mat4& modelTransform, const Mat4& camTransform,
+            const Mat4& projection);
 
     private:
         std::vector<Model*> models;

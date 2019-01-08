@@ -133,7 +133,7 @@ const PerspectiveParameters& Camera::GetPerspectiveParameters() const
     return perspParams;
 }
 
-bool Camera::IsPerpsective() const
+bool Camera::IsPerspective() const
 {
     return isPerspective;
 }

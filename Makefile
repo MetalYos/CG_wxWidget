@@ -25,7 +25,7 @@ all: resources $(TARGETDIR)/$(TARGET)
 
 #Copy Resources from Resources Directory to Target Directory
 resources: directories
-	@echo Copting Resources to Target Directory
+	@echo Copying Resources to Target Directory
 	@cp -r $(RESDIR)/* $(TARGETDIR)/
 
 #Make the Directories

@@ -38,6 +38,9 @@ public:
 
     // Animation menu events
     void OnAnimationSettings(wxCommandEvent& event);
+    void OnAnimationRecord(wxCommandEvent& event);
+    void OnAnimationRecordUI(wxUpdateUIEvent& event);
+    void OnAnimationPlay(wxCommandEvent& event);
 
 private:
     void CreateMenuBar();

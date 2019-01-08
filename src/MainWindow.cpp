@@ -14,6 +14,9 @@ MainWindow::MainWindow(const wxString& title)
     CreateToolBar();
     CreateDrawingPanel();
 
+    CreateStatusBar(1);
+    SetStatusText(wxT("Ready"), 0);
+
     Connect(wxEVT_UPDATE_UI, wxUpdateUIEventHandler(MainWindow::OnUpdateUI));
 
     SetSizer(m_MainSizer);
@@ -81,6 +84,9 @@ void MainWindow::OnUpdateUI(wxUpdateUIEvent& event)
         case ID_SPACE_VIEW:
             OnSelectViewSpaceUI(event);
             break;
+        case ID_ANIMATION_RECORD:
+            OnAnimationRecordUI(event);
+            break;
     }
 }
 
@@ -94,13 +100,13 @@ void MainWindow::OnSwitchProjection(wxCommandEvent& event)
 
 void MainWindow::OnSwitchToOrthoUI(wxUpdateUIEvent& event)
 {
-    bool isPerspective = Scene::GetInstance().GetCamera()->IsPerpsective();
+    bool isPerspective = Scene::GetInstance().GetCamera()->IsPerspective();
     event.Check(!isPerspective);
 }
 
 void MainWindow::OnSwitchToPerspUI(wxUpdateUIEvent& event)
 {
-    bool isPerspective = Scene::GetInstance().GetCamera()->IsPerpsective();
+    bool isPerspective = Scene::GetInstance().GetCamera()->IsPerspective();
     event.Check(isPerspective);
 }
 
@@ -173,6 +179,48 @@ void MainWindow::OnAnimationSettings(wxCommandEvent& event)
     dlg->ShowModal();
 }
 
+void MainWindow::OnAnimationRecord(wxCommandEvent& event)
+{
+    if (Scene::GetInstance().GetModels().size() == 0)
+        return;
+    
+    Settings::IsRecording = !Settings::IsRecording;
+    LOG_TRACE("MainWindow::OnAnimationRecord: Changed IsRecording to {0}", Settings::IsRecording);
+    if (Settings::IsRecording)
+    {
+        Scene::GetInstance().AddKeyFrame();
+    }
+}
+
+void MainWindow::OnAnimationRecordUI(wxUpdateUIEvent& event)
+{
+    event.Check(Settings::IsRecording);
+}
+
+void MainWindow::OnAnimationPlay(wxCommandEvent& event)
+{
+    Settings::IsPlayingAnimation = true;
+
+    do
+    {
+        clock_t before = clock();
+        // m_DrawingPanel->Refresh();
+        INVALIDATE();
+        clock_t diff = clock() - before;
+
+        double diffSec = (double)diff / CLOCKS_PER_SEC;
+        while(diffSec < (1.0 / Settings::FramesPerSeconds))
+        {
+            diff = clock() - before;
+            diffSec = (double)diff / CLOCKS_PER_SEC;
+        }
+    }
+    while (Scene::GetInstance().PlayAnimation());
+
+    Settings::IsPlayingAnimation = false;
+    INVALIDATE();
+}
+
 /**************************** Private Methods ****************************/
 
 void MainWindow::CreateMenuBar()
@@ -184,7 +232,7 @@ void MainWindow::CreateMenuBar()
     wxMenu* file = new wxMenu();
     
     // Create Open menu item and connect it
-    file->Append(wxID_OPEN, wxT("&Open Model"));
+    file->Append(wxID_OPEN, wxT("&Open Model"), wxT("Open a new model file"));
     Connect(wxID_OPEN, wxEVT_COMMAND_MENU_SELECTED, 
         wxCommandEventHandler(MainWindow::OnOpenFile));
     file->AppendSeparator();
@@ -258,10 +306,21 @@ void MainWindow::CreateMenuBar()
     animation->Append(ID_ANIMATION_SETTINGS, wxT("&Settings..."));
     Connect(ID_ANIMATION_SETTINGS, wxEVT_COMMAND_MENU_SELECTED,
         wxCommandEventHandler(MainWindow::OnAnimationSettings));
-    animation->AppendCheckItem(ID_ANIMATION_START_RECORDING, wxT("Start &Recording"));
-    animation->AppendCheckItem(ID_ANIMATION_STOP_RECORDING, wxT("Stop Recording"));
+    animation->AppendCheckItem(ID_ANIMATION_RECORD, wxT("&Record"));
+    Connect(ID_ANIMATION_RECORD, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationRecord));
     animation->AppendSeparator();
     animation->Append(ID_ANIMATION_START_PLAYING, wxT("Start &Playing"));
+    Connect(ID_ANIMATION_START_PLAYING, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationPlay));
+     // Create Space submenu
+    wxMenu* keyframes = new wxMenu();
+    keyframes->Append(ID_ANIMATION_KEYFRAMES_FIRST, wxT("&First KeyFrame"));
+    keyframes->Append(ID_ANIMATION_KEYFRAMES_LAST, wxT("&Last KeyFrame"));
+    keyframes->Append(ID_ANIMATION_KEYFRAMES_NEXT, wxT("&Next KeyFrame"));
+    keyframes->Append(ID_ANIMATION_KEYFRAMES_PREV, wxT("&Previous KeyFrame"));
+    // Append axis and space submenus to actions menu
+    animation->AppendSubMenu(keyframes, wxT("&KeyFrames"));
     // Append the Animation Menu to the menubar
     menubar->Append(animation, wxT("A&nimation"));
 
@@ -272,6 +331,7 @@ void MainWindow::CreateToolBar()
 {
     wxImage::AddHandler(new wxPNGHandler());
 
+    // Create Bitmaps
     wxBitmap exit(wxT("icons/exit.png"), wxBITMAP_TYPE_PNG);
     wxBitmap newb(wxT("icons/new.png"), wxBITMAP_TYPE_PNG);
     wxBitmap open(wxT("icons/open.png"), wxBITMAP_TYPE_PNG);
@@ -287,12 +347,17 @@ void MainWindow::CreateToolBar()
     wxBitmap spaceObj(wxT("icons/space_object.png"), wxBITMAP_TYPE_PNG);
     wxBitmap spaceWorld(wxT("icons/space_world.png"), wxBITMAP_TYPE_PNG);
     wxBitmap spaceView(wxT("icons/space_view.png"), wxBITMAP_TYPE_PNG);
+    wxBitmap animsettings(wxT("icons/animation_settings.png"), wxBITMAP_TYPE_PNG);
+    wxBitmap record(wxT("icons/record.png"), wxBITMAP_TYPE_PNG);
+    wxBitmap play(wxT("icons/play.png"), wxBITMAP_TYPE_PNG);
 
+    // Create Toolbar
     wxToolBar* toolbar = new wxToolBar(this, wxID_ANY);
     toolbar->AddTool(wxID_EXIT, wxT("Exit Application"), exit);
     toolbar->AddSeparator();
     toolbar->AddTool(wxID_NEW, wxT("New Scene"), newb);
     toolbar->AddTool(wxID_OPEN, wxT("Open Model"), open);
+    toolbar->SetToolLongHelp(wxID_OPEN, wxT("Open a new model file"));
     toolbar->AddSeparator();
     toolbar->AddCheckTool(ID_VIEW_ORTHO, wxT("Switch to Orthographic Projection"), ortho);
     toolbar->AddCheckTool(ID_VIEW_PERSP, wxT("Switch to Perspective Projection"), persp);
@@ -309,6 +374,10 @@ void MainWindow::CreateToolBar()
     toolbar->AddCheckTool(ID_SPACE_OBJECT, wxT("Object Space"), spaceObj);
     toolbar->AddCheckTool(ID_SPACE_WORLD, wxT("World Space"), spaceWorld);
     toolbar->AddCheckTool(ID_SPACE_VIEW, wxT("View Space"), spaceView);
+    toolbar->AddSeparator();
+    toolbar->AddTool(ID_ANIMATION_SETTINGS, wxT("Animation Settings..."), animsettings);
+    toolbar->AddCheckTool(ID_ANIMATION_RECORD, wxT("Start Recording"), record);
+    toolbar->AddTool(ID_ANIMATION_START_PLAYING, wxT("Play Animation"), play);
     
     toolbar->Realize();
 

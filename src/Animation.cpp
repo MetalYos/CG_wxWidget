@@ -8,21 +8,11 @@ void Animation::AddKeyFrame(Frame* keyFrame)
     if (keyFrame->Frame > maxFrame)
     {
         keyFrames.push_back(keyFrame);
-        return;
+        maxFrame = keyFrame->Frame;
     }
 
-    for (unsigned int i = 0; i < keyFrames.size(); i++)
-    {
-        if (keyFrame->Frame == keyFrames[i]->Frame)
-        {
-            delete keyFrames[i];
-            keyFrames[i] = keyFrame;
-            return;
-        }
-    }
-    
-    keyFrames.push_back(keyFrame);
-    maxFrame = keyFrame->Frame;
+    if (keyFrame->Frame == 0)
+        currentFrame = GetFrame(0);
 }
 
 Frame* Animation::GetFrame(int frame)
@@ -63,6 +53,35 @@ Frame* Animation::GetFrame(int frame)
     return frameToReturn;
 }
 
+int Animation::GetLastFrameNumber() const
+{
+    return maxFrame;
+}
+
+void Animation::ResetAnimation()
+{
+    if (keyFrames.size() == 0)
+        return;
+    
+    currentFrame = GetFrame(0);
+}
+
+void Animation::StepToNextFrame()
+{
+    if ((keyFrames.size() == 0) || (currentFrame->Frame == maxFrame))
+        return;
+    
+    int currentFrameNum = currentFrame->Frame;
+    delete currentFrame;
+    currentFrame = GetFrame(++currentFrameNum);
+    LOG_TRACE("Animation::StepToNextFrame: Stepped to frame {0}", currentFrame->Frame);
+}
+
+const Frame* Animation::GetCurrentFrame() const
+{
+    return currentFrame;
+}
+
 void Animation::ClearAnimation()
 {
     while (keyFrames.size() > 0)
@@ -71,12 +90,14 @@ void Animation::ClearAnimation()
         keyFrames.pop_back();
         delete frame;
     }
+    currentFrame = NULL;
 }
 
 Frame* Animation::GetFrameLinearInterpolation(Frame* before, Frame* after, int frame) const
 {
     Frame* result = new Frame();
-    double t = (frame - before->Frame) / (after->Frame - before->Frame);
+    double t = (double)(frame - before->Frame) / (after->Frame - before->Frame);
+    LOG_TRACE("Animation::GetFrameLinearInterpolation: t = {:03.2f}", t);
 
     result->ModelTransform = before->ModelTransform * (1.0 - t) + after->ModelTransform * t;
     result->CamTransform = before->CamTransform * (1.0 - t) + after->CamTransform * t;
