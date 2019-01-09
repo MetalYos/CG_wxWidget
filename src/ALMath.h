@@ -34,6 +34,14 @@ inline double ToDegrees(double angleInRadians)
 	return (angleInRadians * 180.0) / AL_PI;
 }
 
+inline double Factorial(int n)
+{
+	int product = 1;
+  	for (int i = 1; i <= n; i++)
+    	product *= i;
+  	return product;
+}
+
 inline bool LineLineIntersection(const Vec4Line& lineA,
 	const Vec4Line& lineB)
 {

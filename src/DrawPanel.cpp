@@ -70,7 +70,7 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
             if (Settings::SelectedSpace == ID_SPACE_VIEW)
                 SCENE.GetCamera()->Translate(Mat4::Translate(offset, 0.0, 0.0));
             else
-                SCENE.GetModels().back()->Translate(Mat4::Translate(offset, 0.0, 0.0), 
+                SCENE.GetModels().back()->Translate(Mat4::Translate(-offset, 0.0, 0.0), 
                     Settings::SelectedSpace == ID_SPACE_OBJECT);
         }
         if (Settings::SelectedAxis[1])
@@ -78,7 +78,7 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
             if (Settings::SelectedSpace == ID_SPACE_VIEW)
                 SCENE.GetCamera()->Translate(Mat4::Translate(0.0, offset, 0.0));
             else
-                SCENE.GetModels().back()->Translate(Mat4::Translate(0.0, offset, 0.0), 
+                SCENE.GetModels().back()->Translate(Mat4::Translate(0.0, -offset, 0.0), 
                     Settings::SelectedSpace == ID_SPACE_OBJECT);
         }
         if (Settings::SelectedAxis[2])
@@ -86,7 +86,7 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
             if (Settings::SelectedSpace == ID_SPACE_VIEW)
                 SCENE.GetCamera()->Translate(Mat4::Translate(0.0, 0.0, offset));
             else
-                SCENE.GetModels().back()->Translate(Mat4::Translate(0.0, 0.0, offset), 
+                SCENE.GetModels().back()->Translate(Mat4::Translate(0.0, 0.0, -offset), 
                     Settings::SelectedSpace == ID_SPACE_OBJECT);
         }
     }

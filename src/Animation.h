@@ -6,7 +6,7 @@ struct Frame
 {
     Mat4 ModelTransform;
     Mat4 CamTransform;
-    int Frame;
+    int FrameNum;
 };
 
 class Animation
@@ -28,6 +28,8 @@ public:
 
 private:
     Frame* GetFrameLinearInterpolation(Frame* before, Frame* after, int frame) const;
+    Frame* GetFrameBezierInterpolationPW(Frame* before, Frame* after, int frame) const;
+    Frame* GetFrameBezierInterpolation(int frame) const;
 
 private:
     std::vector<Frame*> keyFrames;

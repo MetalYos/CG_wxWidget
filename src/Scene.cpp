@@ -224,13 +224,13 @@ void Scene::AddKeyFrame(double timeDiff)
     frame->CamTransform = camera->GetTransform();
 
     if (anim.GetFrame(0) == NULL)
-        frame->Frame = 0;
+        frame->FrameNum = 0;
     else
-        frame->Frame = anim.GetLastFrameNumber() + 
+        frame->FrameNum = anim.GetLastFrameNumber() + 
             (int)(timeDiff * (double)Settings::FramesPerSeconds);
     
     anim.AddKeyFrame(frame);
-    LOG_TRACE("Scene::AddKeyFrame: Added KeyFrame at frame: {0}", frame->Frame);
+    LOG_TRACE("Scene::AddKeyFrame: Added KeyFrame at frame: {0}", frame->FrameNum);
 }
 
 bool Scene::PlayAnimation()
@@ -238,7 +238,7 @@ bool Scene::PlayAnimation()
     if ((models.size() == 0) || anim.GetLastFrameNumber() < 0)
         return false;
 
-    if (anim.GetCurrentFrame()->Frame == anim.GetLastFrameNumber())
+    if (anim.GetCurrentFrame()->FrameNum == anim.GetLastFrameNumber())
     {
         // Animation ended
         anim.ResetAnimation();
