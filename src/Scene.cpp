@@ -214,7 +214,7 @@ void Scene::StartRecordingAnimation()
     anim.ClearAnimation();
 }
 
-void Scene::AddKeyFrame(double timeDiff)
+void Scene::AddKeyFrame(double timeDiff, int mouseDX)
 {
     if (models.size() == 0)
         return;
@@ -222,6 +222,31 @@ void Scene::AddKeyFrame(double timeDiff)
     Frame* frame = new Frame();
     frame->ModelTransform = models.back()->GetTransform();
     frame->CamTransform = camera->GetTransform();
+    frame->Action[0] = (Settings::SelectedAction == ID_ACTION_TRANSLATE);
+    frame->Action[1] = (Settings::SelectedAction == ID_ACTION_SCALE);
+    frame->Action[2] = (Settings::SelectedAction == ID_ACTION_ROTATE);
+    frame->ObjectSpace = (Settings::SelectedSpace == ID_SPACE_OBJECT);
+    if (Settings::SelectedAction == ID_ACTION_TRANSLATE)
+    {
+        double offset = mouseDX / Settings::MouseSensitivity[0];
+        offset = (Settings::SelectedSpace == ID_SPACE_OBJECT) ? -offset : offset;
+        for (int i = 0; i < 3; i++)
+            frame->Translation[i] = (Settings::SelectedAxis[i]) ? offset : 0.0;
+    }
+    else if (Settings::SelectedAction == ID_ACTION_SCALE)
+    {
+        double scale = 1.0 + mouseDX / Settings::MouseSensitivity[1];
+        if (scale < Settings::MinScaleFactor)
+            scale = Settings::MinScaleFactor;
+        for (int i = 0; i < 3; i++)
+            frame->Scale[i] = (Settings::SelectedAxis[i]) ? scale : 1.0;
+    }
+    else
+    {
+        double angle = mouseDX / Settings::MouseSensitivity[2];
+        for (int i = 0; i < 3; i++)
+            frame->Rotation[i] = (Settings::SelectedAxis[i]) ? angle : 0.0;
+    }
 
     if (anim.GetFrame(0) == NULL)
         frame->FrameNum = 0;

@@ -38,7 +38,7 @@ Frame* Animation::GetFrame(int frame)
             if ((keyFrames[i]->FrameNum < frame) && 
                 (keyFrames[i + 1]->FrameNum > frame))
             {
-                frameToReturn = GetFrameLinearInterpolation(keyFrames[i], 
+                frameToReturn = GetFrameLinearInterpolation2(keyFrames[i], 
                     keyFrames[i + 1], frame);
                 break;
             }
@@ -104,6 +104,46 @@ Frame* Animation::GetFrameLinearInterpolation(Frame* before, Frame* after, int f
 
     result->ModelTransform = before->ModelTransform * (1.0 - t) + after->ModelTransform * t;
     result->CamTransform = before->CamTransform * (1.0 - t) + after->CamTransform * t;
+    result->FrameNum = frame;
+
+    return result;
+}
+
+Frame* Animation::GetFrameLinearInterpolation2(Frame* before, Frame* after, int frame) const
+{
+    Frame* result = new Frame();
+    double t = (double)(frame - before->FrameNum) / (after->FrameNum - before->FrameNum);
+    
+    Mat4 modelTransform = before->ModelTransform;
+    Mat4 camTransform = before->CamTransform;
+
+    Vec4 transform = Vec4(0.0, 0.0, 0.0, 1.0) * (1.0 - t) + after->Translation * t;
+    Vec4 scale = Vec4(1.0, 1.0, 1.0, 1.0) * (1.0 - t) + after->Scale * t;
+    Vec4 rotation = Vec4(0.0, 0.0, 0.0, 1.0) * (1.0 - t) + after->Rotation * t;
+
+    if (after->ObjectSpace)
+    {
+        if (after->Action[0])
+            modelTransform = Mat4::Translate(transform) * modelTransform;
+        else if (after->Action[1])
+            modelTransform = Mat4::Scale(scale) * modelTransform;
+        else
+            modelTransform = Mat4::RotateX(rotation[0]) * Mat4::RotateY(rotation[1]) 
+                * Mat4::RotateZ(rotation[2]) * modelTransform;
+    }
+    else
+    {
+        if (after->Action[0])
+            camTransform = camTransform * Mat4::Translate(transform);
+        else if (after->Action[1])
+            camTransform = camTransform * Mat4::Scale(scale);
+        else
+            camTransform = camTransform * Mat4::RotateX(rotation[0]) 
+                * Mat4::RotateY(rotation[1]) * Mat4::RotateZ(rotation[2]);
+    }
+
+    result->ModelTransform = modelTransform;
+    result->CamTransform = camTransform;
     result->FrameNum = frame;
 
     return result;

@@ -18,6 +18,7 @@ public:
 
 private:
     wxPoint m_MousePrevPos;
+    wxPoint m_MouseClickPos;
     bool m_IsMouseLeftButtonClicked;
 
     clock_t m_MouseDownTicks;

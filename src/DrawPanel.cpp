@@ -37,6 +37,8 @@ void DrawPanel::OnMouseLeftClick(wxMouseEvent& event)
     m_MousePrevPos.x = m_MousePrevPos.x - this->GetScreenPosition().x;
     m_MousePrevPos.y = m_MousePrevPos.y - this->GetScreenPosition().y;
 
+    m_MouseClickPos = m_MousePrevPos;
+
     m_IsMouseLeftButtonClicked = true;
     LOG_TRACE("DrawPanel::OnMouseLeftClick: Clicked on left button of the mouse.");
 
@@ -160,6 +162,15 @@ void DrawPanel::OnMouseLeftRelease(wxMouseEvent& event)
     {
         clock_t ticksDiff = clock() - m_MouseDownTicks;
         double timeDiff = (double)ticksDiff / CLOCKS_PER_SEC;
-        Scene::GetInstance().AddKeyFrame(timeDiff);
+
+        // Save current mouse position
+        wxPoint currentMousePos = wxGetMousePosition();
+        currentMousePos.x = currentMousePos.x - this->GetScreenPosition().x;
+        currentMousePos.y = currentMousePos.y - this->GetScreenPosition().y;
+
+        // Calculate delta in x mouse movement from previous press
+        int dx = m_MouseClickPos.x - currentMousePos.x;
+
+        Scene::GetInstance().AddKeyFrame(timeDiff, dx);
     }
 }

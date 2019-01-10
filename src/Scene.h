@@ -28,7 +28,7 @@ class Scene
         Renderer& GetRenderer();
 
         void StartRecordingAnimation();
-        void AddKeyFrame(double timeDiff = 0.0);
+        void AddKeyFrame(double timeDiff = 0.0, int mouseDX = 0);
         bool PlayAnimation();
 
         void Resized(int width, int height);
