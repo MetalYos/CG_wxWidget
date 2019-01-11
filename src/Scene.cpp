@@ -214,7 +214,7 @@ void Scene::StartRecordingAnimation()
     anim.ClearAnimation();
 }
 
-void Scene::AddKeyFrame(double timeDiff, int mouseDX)
+void Scene::AddKeyFrame(double timeDiff, int mouseDX, double scaleFactor)
 {
     if (models.size() == 0)
         return;
@@ -235,11 +235,10 @@ void Scene::AddKeyFrame(double timeDiff, int mouseDX)
     }
     else if (Settings::SelectedAction == ID_ACTION_SCALE)
     {
-        double scale = 1.0 + mouseDX / Settings::MouseSensitivity[1];
-        if (scale < Settings::MinScaleFactor)
-            scale = Settings::MinScaleFactor;
+        scaleFactor = (scaleFactor < Settings::MinScaleFactor) ? 
+            Settings::MinScaleFactor : scaleFactor;
         for (int i = 0; i < 3; i++)
-            frame->Scale[i] = (Settings::SelectedAxis[i]) ? scale : 1.0;
+            frame->Scale[i] = (Settings::SelectedAxis[i]) ? scaleFactor : 1.0;
     }
     else
     {
@@ -253,9 +252,10 @@ void Scene::AddKeyFrame(double timeDiff, int mouseDX)
     else
         frame->FrameNum = anim.GetLastFrameNumber() + 
             (int)(timeDiff * (double)Settings::FramesPerSeconds);
+    frame->OriginalFrame = frame->FrameNum;
     
-    anim.AddKeyFrame(frame);
     LOG_TRACE("Scene::AddKeyFrame: Added KeyFrame at frame: {0}", frame->FrameNum);
+    anim.AddKeyFrame(frame);
 }
 
 bool Scene::PlayAnimation()
@@ -274,4 +274,19 @@ bool Scene::PlayAnimation()
     
     anim.StepToNextFrame();
     return true;
+}
+
+void Scene::IncreasePlaybackSpeed(double percentage)
+{
+    anim.IncreasePlaybackSpeed(percentage);
+}
+
+void Scene::DecreasePlaybackSpeed(double percentage)
+{
+    anim.DecreasePlaybackSpeed(percentage);
+}
+
+void Scene::NormalPlaybackSpeed()
+{
+    anim.NormalPlaybackSpeed();
 }

@@ -28,8 +28,11 @@ class Scene
         Renderer& GetRenderer();
 
         void StartRecordingAnimation();
-        void AddKeyFrame(double timeDiff = 0.0, int mouseDX = 0);
+        void AddKeyFrame(double timeDiff = 0.0, int mouseDX = 0, double scaleFactor = 1.0);
         bool PlayAnimation();
+        void IncreasePlaybackSpeed(double percentage);
+        void DecreasePlaybackSpeed(double percentage);
+        void NormalPlaybackSpeed();
 
         void Resized(int width, int height);
         void Draw();

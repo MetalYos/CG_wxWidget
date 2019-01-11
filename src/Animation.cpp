@@ -8,6 +8,14 @@ void Animation::AddKeyFrame(Frame* keyFrame)
     if (keyFrame->FrameNum > maxFrame)
     {
         keyFrames.push_back(keyFrame);
+        if (keyFrame->FrameNum > 0)
+        {
+            Frame* prevKF = keyFrames[keyFrames.size() - 2];
+            keyFrame->OriginalFrame = prevKF->OriginalFrame + (keyFrame->FrameNum - prevKF->FrameNum);
+            keyFrame->FrameNum = (int)(keyFrame->OriginalFrame * speedFactor) + keyFrames[0]->OriginalFrame;
+            LOG_TRACE("Animation::AddKeyFrame: Original Frame: {0}", keyFrame->OriginalFrame);
+            LOG_TRACE("Animation::AddKeyFrame: Frame: {0}", keyFrame->FrameNum);
+        }
         maxFrame = keyFrame->FrameNum;
     }
 
@@ -85,6 +93,38 @@ const Frame* Animation::GetCurrentFrame() const
     return currentFrame;
 }
 
+void Animation::IncreasePlaybackSpeed(double percentage)
+{
+    double factor = 1.0 - percentage / 100.0;
+    for (unsigned int i = 1; i < keyFrames.size(); i++)
+    {
+        keyFrames[i]->FrameNum = (int)(keyFrames[i]->FrameNum * factor) + keyFrames[0]->OriginalFrame;
+    }
+    maxFrame = keyFrames[keyFrames.size() - 1]->FrameNum;
+    speedFactor *= factor;
+}
+
+void Animation::DecreasePlaybackSpeed(double percentage)
+{
+    double factor = 1.0 + percentage / 100.0;
+    for (unsigned int i = 1; i < keyFrames.size(); i++)
+    {
+        keyFrames[i]->FrameNum = (int)(keyFrames[i]->FrameNum * factor) + keyFrames[0]->OriginalFrame;
+    }
+    maxFrame = keyFrames[keyFrames.size() - 1]->FrameNum;
+    speedFactor *= factor;
+}
+
+void Animation::NormalPlaybackSpeed()
+{
+    for (Frame* keyFrame : keyFrames)
+    {
+        keyFrame->FrameNum = keyFrame->OriginalFrame;
+    }
+    maxFrame = keyFrames[keyFrames.size() - 1]->FrameNum;
+    speedFactor = 1.0;
+}
+
 void Animation::ClearAnimation()
 {
     while (keyFrames.size() > 0)
@@ -94,6 +134,8 @@ void Animation::ClearAnimation()
         delete frame;
     }
     currentFrame = NULL;
+    maxFrame = -1;
+    speedFactor = 1.0;
 }
 
 Frame* Animation::GetFrameLinearInterpolation(Frame* before, Frame* after, int frame) const

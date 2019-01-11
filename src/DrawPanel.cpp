@@ -2,7 +2,7 @@
 #include "Scene.h"
 
 DrawPanel::DrawPanel(wxFrame* parent)
-    : wxPanel(parent), m_IsMouseLeftButtonClicked(false)
+    : wxPanel(parent), m_IsMouseLeftButtonClicked(false), m_ScaleFactor(1.0)
 {
     Connect(wxEVT_PAINT, wxPaintEventHandler(DrawPanel::OnPaint));
     Connect(wxEVT_ERASE_BACKGROUND, wxEraseEventHandler(DrawPanel::OnEraseBackground));
@@ -43,7 +43,10 @@ void DrawPanel::OnMouseLeftClick(wxMouseEvent& event)
     LOG_TRACE("DrawPanel::OnMouseLeftClick: Clicked on left button of the mouse.");
 
     if (Settings::IsRecording)
+    {
         m_MouseDownTicks = clock();
+        m_ScaleFactor = 1.0;
+    }
 
     event.Skip();
 }
@@ -97,6 +100,7 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
         double scale = 1.0 + dx / Settings::MouseSensitivity[1];
         if (scale < Settings::MinScaleFactor)
             scale = Settings::MinScaleFactor;
+        m_ScaleFactor *= scale;
         
         if (Settings::SelectedAxis[0])
         {
@@ -171,6 +175,6 @@ void DrawPanel::OnMouseLeftRelease(wxMouseEvent& event)
         // Calculate delta in x mouse movement from previous press
         int dx = m_MouseClickPos.x - currentMousePos.x;
 
-        Scene::GetInstance().AddKeyFrame(timeDiff, dx);
+        Scene::GetInstance().AddKeyFrame(timeDiff, dx, m_ScaleFactor);
     }
 }

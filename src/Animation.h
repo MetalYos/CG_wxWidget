@@ -4,9 +4,11 @@
 
 struct Frame
 {
+public:
     Mat4 ModelTransform;
     Mat4 CamTransform;
     int FrameNum;
+    int OriginalFrame;
 
     Vec4 Translation;
     Vec4 Scale;
@@ -16,7 +18,7 @@ struct Frame
     bool ObjectSpace;
 
     Frame()
-        : FrameNum(0), ObjectSpace(true)
+        : FrameNum(0), OriginalFrame(0), ObjectSpace(true)
     {
         Action[0] = Action[1] = Action[2] = true;
     }
@@ -26,7 +28,7 @@ class Animation
 {
 public:
     Animation()
-        : maxFrame(-1), currentFrame(NULL) {}
+        : maxFrame(-1), currentFrame(NULL), speedFactor(1.0) {}
     ~Animation() { ClearAnimation(); }
 
     void AddKeyFrame(Frame* keyFrame);
@@ -36,6 +38,10 @@ public:
     void ResetAnimation();
     void StepToNextFrame();
     const Frame* GetCurrentFrame() const;
+
+    void IncreasePlaybackSpeed(double percentage);
+    void DecreasePlaybackSpeed(double percentage);
+    void NormalPlaybackSpeed();
 
     void ClearAnimation();
 
@@ -49,4 +55,5 @@ private:
     std::vector<Frame*> keyFrames;
     int maxFrame;
     Frame* currentFrame;
+    double speedFactor;
 };

@@ -22,4 +22,5 @@ private:
     bool m_IsMouseLeftButtonClicked;
 
     clock_t m_MouseDownTicks;
+    double m_ScaleFactor;
 };

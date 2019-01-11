@@ -42,6 +42,11 @@ public:
     void OnAnimationRecordUI(wxUpdateUIEvent& event);
     void OnAnimationPlay(wxCommandEvent& event);
 
+    // Animation Playback Speed menu events
+    void OnAnimationIncreasePlaybackSpeed(wxCommandEvent& event);
+    void OnAnimationDecreasePlaybackSpeed(wxCommandEvent& event);
+    void OnAnimationNormalPlaybackSpeed(wxCommandEvent& event);
+
 private:
     void CreateMenuBar();
     void CreateToolBar();

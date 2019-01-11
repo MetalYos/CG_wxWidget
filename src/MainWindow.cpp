@@ -221,6 +221,21 @@ void MainWindow::OnAnimationPlay(wxCommandEvent& event)
     INVALIDATE();
 }
 
+void MainWindow::OnAnimationIncreasePlaybackSpeed(wxCommandEvent& event)
+{
+    Scene::GetInstance().IncreasePlaybackSpeed(25.0);
+}
+
+void MainWindow::OnAnimationDecreasePlaybackSpeed(wxCommandEvent& event)
+{
+    Scene::GetInstance().DecreasePlaybackSpeed(25.0);
+}
+
+void MainWindow::OnAnimationNormalPlaybackSpeed(wxCommandEvent& event)
+{
+    Scene::GetInstance().NormalPlaybackSpeed();
+}
+
 /**************************** Private Methods ****************************/
 
 void MainWindow::CreateMenuBar()
@@ -313,13 +328,26 @@ void MainWindow::CreateMenuBar()
     animation->Append(ID_ANIMATION_START_PLAYING, wxT("Start &Playing"));
     Connect(ID_ANIMATION_START_PLAYING, wxEVT_COMMAND_MENU_SELECTED,
         wxCommandEventHandler(MainWindow::OnAnimationPlay));
-     // Create Space submenu
+    // Create Playback Speed submenu
+    wxMenu* speed = new wxMenu();
+    speed->Append(ID_ANIMATION_SPEED_INCREASE, wxT("&Increase by 25%"));
+    Connect(ID_ANIMATION_SPEED_INCREASE, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationIncreasePlaybackSpeed));
+    speed->Append(ID_ANIMATION_SPEED_DECREASE, wxT("&Decrease by 25%"));
+    Connect(ID_ANIMATION_SPEED_DECREASE, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationDecreasePlaybackSpeed));
+    speed->Append(ID_ANIMATION_SPEED_NORMAL, wxT("&Normal"));
+    Connect(ID_ANIMATION_SPEED_NORMAL, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationNormalPlaybackSpeed));
+    // Append Playback Speed submenu to actions menu
+    animation->AppendSubMenu(speed, wxT("&Playback Speed"));
+    // Create Keyframes submenu
     wxMenu* keyframes = new wxMenu();
     keyframes->Append(ID_ANIMATION_KEYFRAMES_FIRST, wxT("&First KeyFrame"));
     keyframes->Append(ID_ANIMATION_KEYFRAMES_LAST, wxT("&Last KeyFrame"));
     keyframes->Append(ID_ANIMATION_KEYFRAMES_NEXT, wxT("&Next KeyFrame"));
     keyframes->Append(ID_ANIMATION_KEYFRAMES_PREV, wxT("&Previous KeyFrame"));
-    // Append axis and space submenus to actions menu
+    // Append Animation Submenu to actions menu
     animation->AppendSubMenu(keyframes, wxT("&KeyFrames"));
     // Append the Animation Menu to the menubar
     menubar->Append(animation, wxT("A&nimation"));
