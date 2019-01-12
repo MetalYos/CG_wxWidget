@@ -19,6 +19,15 @@ public:
     void OnSwitchToPerspUI(wxUpdateUIEvent& event);
     void OnBackFaceCulling(wxCommandEvent& event);
     void OnBackFaceCullingUI(wxUpdateUIEvent& event);
+    void OnBackgroundOpen(wxCommandEvent& event);
+    void OnBackgroundView(wxCommandEvent& event);
+    void OnBackgroundViewUI(wxUpdateUIEvent& event);
+    void OnBackgroundStretchRepeat(wxCommandEvent& event);
+    void OnBackgroundStretchUI(wxUpdateUIEvent& event);
+    void OnBackgroundRepeatUI(wxUpdateUIEvent& event);
+    void OnBackgroundInterpolation(wxCommandEvent& event);
+    void OnBackgroundInterpolationLinearUI(wxUpdateUIEvent& event);
+    void OnBackgroundInterpolationBilinearUI(wxUpdateUIEvent& event);
 
     // Action option events
     void OnChangeAction(wxCommandEvent& event);
@@ -52,8 +61,12 @@ private:
     void CreateToolBar();
     void CreateDrawingPanel();
 
+    void CreateProjectionSubMenu(wxMenu* viewMenu);
+    void CreateBackgroundSubMenu(wxMenu* viewMenu);
+
 private:
     wxBoxSizer* m_MainSizer;
     wxString m_ModelFileName;
+    wxString m_BGFileName;
     DrawPanel* m_DrawingPanel = NULL;
 };

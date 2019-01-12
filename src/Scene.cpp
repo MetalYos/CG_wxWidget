@@ -66,10 +66,16 @@ void Scene::Resized(int width, int height)
 
 void Scene::DrawBackground()
 {
-    // Draw Background
-    wxColour blackCol;
-    blackCol.Set(wxT("#000000"));
-    renderer.DrawBackgeound(blackCol);
+    if (Settings::IsBackgroundOn)
+    {
+        renderer.DrawBackgroundImage(Settings::BackgroundImage, Settings::IsBackgroundStretched,
+            (ImageInterpolationType)Settings::BackgroundInterpolation);
+    }
+    else
+    {
+        Vec4 bgColor(0.0, 0.0, 0.0);
+        renderer.DrawBackground(bgColor);
+    }
 }
 
 void Scene::Draw()

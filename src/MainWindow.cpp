@@ -61,6 +61,21 @@ void MainWindow::OnUpdateUI(wxUpdateUIEvent& event)
         case ID_VIEW_BACKFACE:
             OnBackFaceCullingUI(event);
             break;
+        case ID_VIEW_BACKGROUND_VIEW:
+            OnBackgroundViewUI(event);
+            break;
+        case ID_VIEW_BACKGROUND_STRETCH:
+            OnBackgroundStretchUI(event);
+            break;
+        case ID_VIEW_BACKGROUND_REPEAT:
+            OnBackgroundRepeatUI(event);
+            break;
+        case ID_VIEW_BACKGROUND_INTERPOLATION_LINEAR:
+            OnBackgroundInterpolationLinearUI(event);
+            break;
+        case ID_VIEW_BACKGROUND_INTERPOLATION_BILINEAR:
+            OnBackgroundInterpolationBilinearUI(event);
+            break;
         case ID_ACTION_TRANSLATE:
             OnSelectTranslateUI(event);
             break;
@@ -119,6 +134,76 @@ void MainWindow::OnBackFaceCulling(wxCommandEvent& event)
 void MainWindow::OnBackFaceCullingUI(wxUpdateUIEvent& event)
 {
     event.Check(Settings::IsBackFaceCullingEnabled);
+}
+
+void MainWindow::OnBackgroundOpen(wxCommandEvent& event)
+{
+    wxFileDialog* fileDialog = new wxFileDialog(this, wxT("Open an image"), wxT(""), wxT(""),
+        wxT("BMP image (*.bmp)|*.bmp|JPEG image (*.jpg)|*.jpg|PNG image (*.png)|*.png"), 
+        wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+    if (fileDialog->ShowModal() == wxID_OK)
+    {
+        wxString fileName = fileDialog->GetPath();
+        Settings::BackgroundImage = std::string(fileName.mb_str());
+        Settings::IsBackgroundOn = true;
+
+        INVALIDATE();
+    }
+}
+
+void MainWindow::OnBackgroundView(wxCommandEvent& event)
+{
+    Settings::IsBackgroundOn = !Settings::IsBackgroundOn;
+    INVALIDATE();
+}
+
+void MainWindow::OnBackgroundViewUI(wxUpdateUIEvent& event)
+{
+    event.Check(Settings::IsBackgroundOn);
+}
+
+void MainWindow::OnBackgroundStretchRepeat(wxCommandEvent& event)
+{
+    int id = event.GetId();
+    Settings::IsBackgroundStretched = (id == ID_VIEW_BACKGROUND_STRETCH);
+
+    if (Settings::IsBackgroundOn)
+    {
+        INVALIDATE();
+    }
+}
+
+void MainWindow::OnBackgroundStretchUI(wxUpdateUIEvent& event)
+{
+    event.Check(Settings::IsBackgroundStretched);
+}
+
+void MainWindow::OnBackgroundRepeatUI(wxUpdateUIEvent& event)
+{
+    event.Check(!Settings::IsBackgroundStretched);
+}
+
+void MainWindow::OnBackgroundInterpolation(wxCommandEvent& event)
+{
+    int id = event.GetId();
+    Settings::BackgroundInterpolation = id - ID_VIEW_BACKGROUND_INTERPOLATION_LINEAR;
+    if (Settings::IsBackgroundOn)
+    {
+        INVALIDATE();
+    }
+}
+
+void MainWindow::OnBackgroundInterpolationLinearUI(wxUpdateUIEvent& event)
+{
+    int id = event.GetId();
+    event.Check(Settings::BackgroundInterpolation == (id - ID_VIEW_BACKGROUND_INTERPOLATION_LINEAR));
+}
+
+void MainWindow::OnBackgroundInterpolationBilinearUI(wxUpdateUIEvent& event)
+{
+    int id = event.GetId();
+    event.Check(Settings::BackgroundInterpolation == (id - ID_VIEW_BACKGROUND_INTERPOLATION_LINEAR));
 }
 
 void MainWindow::OnChangeAction(wxCommandEvent& event)
@@ -260,18 +345,13 @@ void MainWindow::CreateMenuBar()
     // Create View menu
     wxMenu* view = new wxMenu();
     // Create Projection SubMenu
-    wxMenu* projection = new wxMenu();
-    projection->AppendCheckItem(ID_VIEW_ORTHO, wxT("Orthographic"));
-    Connect(ID_VIEW_ORTHO, wxEVT_COMMAND_MENU_SELECTED, 
-        wxCommandEventHandler(MainWindow::OnSwitchProjection));
-    projection->AppendCheckItem(ID_VIEW_PERSP, wxT("Perspective"));
-    Connect(ID_VIEW_PERSP, wxEVT_COMMAND_MENU_SELECTED, 
-        wxCommandEventHandler(MainWindow::OnSwitchProjection));
-    // Add Projection SubMenu to View Menu
-    view->AppendSubMenu(projection, wxT("&Projection"));
+    CreateProjectionSubMenu(view);
     view->AppendCheckItem(ID_VIEW_BACKFACE, wxT("&BackFace Culling"));
     Connect(ID_VIEW_BACKFACE, wxEVT_COMMAND_MENU_SELECTED, 
         wxCommandEventHandler(MainWindow::OnBackFaceCulling));
+    // Create Background SubMenu
+    CreateBackgroundSubMenu(view);
+
     // Append the View Menu to the menubar
     menubar->Append(view, wxT("&View"));
 
@@ -419,4 +499,48 @@ void MainWindow::CreateDrawingPanel()
 
     m_MainSizer->Add(m_DrawingPanel, 1, wxEXPAND | wxALL, 5);
     m_MainSizer->Layout();
+}
+
+void MainWindow::CreateProjectionSubMenu(wxMenu* viewMenu)
+{
+    wxMenu* projection = new wxMenu();
+    projection->AppendCheckItem(ID_VIEW_ORTHO, wxT("Orthographic"));
+    Connect(ID_VIEW_ORTHO, wxEVT_COMMAND_MENU_SELECTED, 
+        wxCommandEventHandler(MainWindow::OnSwitchProjection));
+    projection->AppendCheckItem(ID_VIEW_PERSP, wxT("Perspective"));
+    Connect(ID_VIEW_PERSP, wxEVT_COMMAND_MENU_SELECTED, 
+        wxCommandEventHandler(MainWindow::OnSwitchProjection));
+    // Add Projection SubMenu to View Menu
+    viewMenu->AppendSubMenu(projection, wxT("&Projection"));
+}
+
+void MainWindow::CreateBackgroundSubMenu(wxMenu* viewMenu)
+{
+    wxMenu* background = new wxMenu();
+    background->Append(ID_VIEW_BACKGROUND_OPEN, wxT("&Open..."));
+    Connect(ID_VIEW_BACKGROUND_OPEN, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnBackgroundOpen));
+    background->AppendCheckItem(ID_VIEW_BACKGROUND_VIEW, wxT("&View"));
+    Connect(ID_VIEW_BACKGROUND_VIEW, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnBackgroundView));
+    background->AppendSeparator();
+    background->AppendCheckItem(ID_VIEW_BACKGROUND_STRETCH, wxT("&Stretch"));
+    Connect(ID_VIEW_BACKGROUND_STRETCH, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnBackgroundStretchRepeat));
+    background->AppendCheckItem(ID_VIEW_BACKGROUND_REPEAT, wxT("&Repeat"));
+    Connect(ID_VIEW_BACKGROUND_REPEAT, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnBackgroundStretchRepeat));
+    background->AppendSeparator();
+    // Create Interpolation SubMenu
+    wxMenu* interpolation = new wxMenu();
+    interpolation->AppendCheckItem(ID_VIEW_BACKGROUND_INTERPOLATION_LINEAR, wxT("&Linear"));
+    Connect(ID_VIEW_BACKGROUND_INTERPOLATION_LINEAR, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnBackgroundInterpolation));
+    interpolation->AppendCheckItem(ID_VIEW_BACKGROUND_INTERPOLATION_BILINEAR, wxT("&Bilinear"));
+    Connect(ID_VIEW_BACKGROUND_INTERPOLATION_BILINEAR, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnBackgroundInterpolation));
+    // Add Interpolation SubMenu to background
+    background->AppendSubMenu(interpolation, wxT("&Interpolation"));
+    // Add background SubMenu to view
+    viewMenu->AppendSubMenu(background, wxT("&Background"));
 }

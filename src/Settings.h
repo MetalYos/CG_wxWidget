@@ -1,10 +1,18 @@
 #pragma once
 
+#include <string>
+
 enum CustomIDs
 {
     ID_VIEW_PERSP = 101,
     ID_VIEW_ORTHO,
     ID_VIEW_BACKFACE,
+    ID_VIEW_BACKGROUND_OPEN,
+    ID_VIEW_BACKGROUND_VIEW,
+    ID_VIEW_BACKGROUND_STRETCH,
+    ID_VIEW_BACKGROUND_REPEAT,
+    ID_VIEW_BACKGROUND_INTERPOLATION_LINEAR,
+    ID_VIEW_BACKGROUND_INTERPOLATION_BILINEAR,
     ID_ACTION_TRANSLATE,
     ID_ACTION_SCALE,
     ID_ACTION_ROTATE,
@@ -44,4 +52,8 @@ public:
     static bool IsPlayingAnimation;
     static int FramesPerSeconds;
     static bool FramesInterpolation[2]; // Linear, Bezier
+    static bool IsBackgroundOn;
+    static bool IsBackgroundStretched;
+    static int BackgroundInterpolation;
+    static std::string BackgroundImage;
 };

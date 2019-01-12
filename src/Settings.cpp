@@ -10,3 +10,7 @@ bool Settings::IsRecording = false;
 bool Settings::IsPlayingAnimation = false;
 int Settings::FramesPerSeconds = 30;
 bool Settings::FramesInterpolation[2] = { true, false };
+bool Settings::IsBackgroundOn = false;
+bool Settings::IsBackgroundStretched = true;
+int Settings::BackgroundInterpolation = 0;
+std::string Settings::BackgroundImage = "";
