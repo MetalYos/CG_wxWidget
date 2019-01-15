@@ -63,11 +63,7 @@ public:
     bool IsPerspective() const;
     void SwitchToProjection(bool perspective);
 
-    void Translate(const Mat4& T);
-    void Scale(const Mat4& S);
-    void Rotate(const Mat4& R);
-
-    const Mat4& GetTransform() const;
+    const Mat4& GetWorldToViewTransform() const;
 
 private:
     Mat4 projection;
@@ -75,7 +71,7 @@ private:
     Mat4 perspProjection;
     bool isPerspective;
 
-    Mat4 transform;
+    Mat4 worldToView;
 
     OrthographicParameters orthoParams;
     PerspectiveParameters perspParams;

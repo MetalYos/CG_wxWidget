@@ -14,10 +14,11 @@ public:
     void AddGeometry(Geometry* geo);
     const std::vector<Geometry*>& GetGeometries() const;
 
-    Mat4 GetTransform() const;
-    void Translate(const Mat4& T, bool objectSpace = true);
-    void Rotate(const Mat4& R, bool objectSpace = true);
-    void Scale(const Mat4& S, bool objectSpace = true);
+    const Mat4& GetObjectToWorldTransform() const;
+    const Mat4& GetViewTransform() const;
+    void Translate(const Mat4& T, int space = ID_SPACE_OBJECT);
+    void Rotate(const Mat4& R, int space = ID_SPACE_OBJECT);
+    void Scale(const Mat4& S, int space = ID_SPACE_OBJECT);
 
 private:
     Vec4 CalculatePolyNormal(Polygon* p) const;
@@ -32,5 +33,6 @@ public:
 
 private:
     std::vector<Geometry*> geos;
-    Mat4 transform;
+    Mat4 objectToWorld;
+    Mat4 viewTransform;
 };

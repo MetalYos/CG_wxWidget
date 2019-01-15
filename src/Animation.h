@@ -5,8 +5,8 @@
 struct Frame
 {
 public:
-    Mat4 ModelTransform;
-    Mat4 CamTransform;
+    Mat4 ObjectToWorldTransform;
+    Mat4 ViewTransform;
     int FrameNum;
     int OriginalFrame;
 
@@ -15,10 +15,10 @@ public:
     Vec4 Rotation;
 
     bool Action[3];
-    bool ObjectSpace;
+    int Space;
 
     Frame()
-        : FrameNum(0), OriginalFrame(0), ObjectSpace(true)
+        : FrameNum(0), OriginalFrame(0), Space(ID_SPACE_OBJECT)
     {
         Action[0] = Action[1] = Action[2] = true;
     }
@@ -28,7 +28,8 @@ class Animation
 {
 public:
     Animation()
-        : maxFrame(-1), currentFrame(NULL), speedFactor(1.0) {}
+        : maxFrame(-1), currentFrame(NULL), speedFactor(1.0), 
+        isOnlyTranslation(false) {}
     ~Animation() { ClearAnimation(); }
 
     void AddKeyFrame(Frame* keyFrame);
@@ -56,4 +57,5 @@ private:
     int maxFrame;
     Frame* currentFrame;
     double speedFactor;
+    bool isOnlyTranslation;
 };

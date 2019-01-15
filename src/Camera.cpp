@@ -120,7 +120,7 @@ void Camera::LookAt(const Vec4& eye, const Vec4& at, const Vec4& up)
 
     Mat4 translate = Mat4::Translate(-eye);
 
-    transform = translate * rotate;
+    worldToView = translate * rotate;
 }
 
 const OrthographicParameters& Camera::GetOrthographicParameters() const
@@ -154,22 +154,7 @@ void Camera::SwitchToProjection(bool perspective)
     }
 }
 
-void Camera::Translate(const Mat4& T)
+const Mat4& Camera::GetWorldToViewTransform() const
 {
-    transform = transform * T;
-}
-
-void Camera::Scale(const Mat4& S)
-{
-    transform = transform * S;
-}
-
-void Camera::Rotate(const Mat4& R)
-{
-    transform = transform * R;
-}
-
-const Mat4& Camera::GetTransform() const
-{
-    return transform;
+    return worldToView;
 }

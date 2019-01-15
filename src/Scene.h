@@ -28,7 +28,7 @@ class Scene
         Renderer& GetRenderer();
 
         void StartRecordingAnimation();
-        void AddKeyFrame(double timeDiff = 0.0, int mouseDX = 0, double scaleFactor = 1.0);
+        void AddKeyFrame(double timeDiff = 0.0, const Vec4& offsets = Vec4(0.0, 1.0, 0.0));
         bool PlayAnimation();
         void IncreasePlaybackSpeed(double percentage);
         void DecreasePlaybackSpeed(double percentage);
@@ -41,16 +41,16 @@ class Scene
         Scene();
 
         void DrawBackground();
-        void DrawEdge(const Vec4& p0, const Vec4& p1, const Mat4& modelTransform, 
-            const Mat4& camTransform, const Mat4& projection, const wxColour& color, int thickness = 0);
-        void DrawPolygon(Polygon* poly, Model* model, const Mat4& modelTransform, 
-            const Mat4& camTransform, const Mat4& projection, const wxColour& color);
-        void DrawModel(Model* model, const Mat4& modelTransform, const Mat4& camTransform, 
-            const Mat4& projection, const wxColour& color);
-        void DrawOrigin(const Vec4& origin, const Mat4& modelTransform, 
-            const Mat4& camTransform, const Mat4& projection);
-        bool IsBackFace(Polygon* p, const Mat4& modelTransform, const Mat4& camTransform,
-            const Mat4& projection);
+        void DrawEdge(const Vec4& p0, const Vec4& p1, const Mat4& objectToWorld, const Mat4& camTransform,
+            const Mat4& viewTransform, const Mat4& projection, const wxColour& color, int thickness = 0);
+        void DrawPolygon(Polygon* poly, Model* model, const Mat4& objectToWorld, 
+            const Mat4& camTransform, const Mat4& viewTransform, const Mat4& projection, const wxColour& color);
+        void DrawModel(Model* model, const Mat4& objectToWorld, const Mat4& camTransform, 
+            const Mat4& viewTransform, const Mat4& projection, const wxColour& color);
+        void DrawOrigin(const Vec4& origin, const Mat4& objectToWorld, const Mat4& camTransform, 
+            const Mat4& viewTransform, const Mat4& projection);
+        bool IsBackFace(Polygon* p, const Mat4& objectToWorld, const Mat4& camTransform,
+            const Mat4& viewTransform, const Mat4& projection);
 
     private:
         std::vector<Model*> models;

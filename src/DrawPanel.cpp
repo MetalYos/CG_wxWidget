@@ -2,7 +2,8 @@
 #include "Scene.h"
 
 DrawPanel::DrawPanel(wxFrame* parent)
-    : wxPanel(parent), m_IsMouseLeftButtonClicked(false), m_ScaleFactor(1.0)
+    : wxPanel(parent), m_IsMouseLeftButtonClicked(false), 
+    m_Offsets(Vec4(0.0, 1.0, 0.0))
 {
     Connect(wxEVT_PAINT, wxPaintEventHandler(DrawPanel::OnPaint));
     Connect(wxEVT_ERASE_BACKGROUND, wxEraseEventHandler(DrawPanel::OnEraseBackground));
@@ -40,12 +41,11 @@ void DrawPanel::OnMouseLeftClick(wxMouseEvent& event)
     m_MouseClickPos = m_MousePrevPos;
 
     m_IsMouseLeftButtonClicked = true;
-    LOG_TRACE("DrawPanel::OnMouseLeftClick: Clicked on left button of the mouse.");
 
     if (Settings::IsRecording)
     {
         m_MouseDownTicks = clock();
-        m_ScaleFactor = 1.0;
+        m_Offsets = Vec4(0.0, 1.0, 0.0);
     }
 
     event.Skip();
@@ -69,30 +69,19 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
 
     if (Settings::SelectedAction == ID_ACTION_TRANSLATE)
     {
-        double offset = dx / Settings::MouseSensitivity[0];
+        double offset = -dx / Settings::MouseSensitivity[0];
+        m_Offsets[0] += offset;
         if (Settings::SelectedAxis[0])
         {
-            if (Settings::SelectedSpace == ID_SPACE_VIEW)
-                SCENE.GetCamera()->Translate(Mat4::Translate(offset, 0.0, 0.0));
-            else
-                SCENE.GetModels().back()->Translate(Mat4::Translate(-offset, 0.0, 0.0), 
-                    Settings::SelectedSpace == ID_SPACE_OBJECT);
+            SCENE.GetModels().back()->Translate(Mat4::Translate(offset, 0.0, 0.0), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[1])
         {
-            if (Settings::SelectedSpace == ID_SPACE_VIEW)
-                SCENE.GetCamera()->Translate(Mat4::Translate(0.0, offset, 0.0));
-            else
-                SCENE.GetModels().back()->Translate(Mat4::Translate(0.0, -offset, 0.0), 
-                    Settings::SelectedSpace == ID_SPACE_OBJECT);
+            SCENE.GetModels().back()->Translate(Mat4::Translate(0.0, offset, 0.0), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[2])
         {
-            if (Settings::SelectedSpace == ID_SPACE_VIEW)
-                SCENE.GetCamera()->Translate(Mat4::Translate(0.0, 0.0, offset));
-            else
-                SCENE.GetModels().back()->Translate(Mat4::Translate(0.0, 0.0, -offset), 
-                    Settings::SelectedSpace == ID_SPACE_OBJECT);
+            SCENE.GetModels().back()->Translate(Mat4::Translate(0.0, 0.0, offset), Settings::SelectedSpace);
         }
     }
     else if (Settings::SelectedAction == ID_ACTION_SCALE)
@@ -100,59 +89,36 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
         double scale = 1.0 + dx / Settings::MouseSensitivity[1];
         if (scale < Settings::MinScaleFactor)
             scale = Settings::MinScaleFactor;
-        m_ScaleFactor *= scale;
+        m_Offsets[1] *= scale;
         
         if (Settings::SelectedAxis[0])
         {
-            if (Settings::SelectedSpace == ID_SPACE_VIEW)
-                SCENE.GetCamera()->Scale(Mat4::Scale(scale, 1.0, 1.0));
-            else
-                SCENE.GetModels().back()->Scale(Mat4::Scale(scale, 1.0, 1.0), 
-                    Settings::SelectedSpace == ID_SPACE_OBJECT);
+            SCENE.GetModels().back()->Scale(Mat4::Scale(scale, 1.0, 1.0), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[1])
         {
-            if (Settings::SelectedSpace == ID_SPACE_VIEW)
-                SCENE.GetCamera()->Scale(Mat4::Scale(1.0, scale, 1.0));
-            else
-                SCENE.GetModels().back()->Scale(Mat4::Scale(1.0, scale, 1.0), 
-                    Settings::SelectedSpace == ID_SPACE_OBJECT);
+            SCENE.GetModels().back()->Scale(Mat4::Scale(1.0, scale, 1.0), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[2])
         {
-            if (Settings::SelectedSpace == ID_SPACE_VIEW)
-                SCENE.GetCamera()->Scale(Mat4::Scale(1.0, 1.0, scale));
-            else
-                SCENE.GetModels().back()->Scale(Mat4::Scale(1.0, 1.0, scale), 
-                    Settings::SelectedSpace == ID_SPACE_OBJECT);
+            SCENE.GetModels().back()->Scale(Mat4::Scale(1.0, 1.0, scale), Settings::SelectedSpace);
         }
     }
     else if (Settings::SelectedAction == ID_ACTION_ROTATE)
     {
         double angle = dx / Settings::MouseSensitivity[2];
+        m_Offsets[2] += angle;
         if (Settings::SelectedAxis[0])
         {
-            if (Settings::SelectedSpace == ID_SPACE_VIEW)
-                SCENE.GetCamera()->Rotate(Mat4::RotateX(angle));
-            else
-                SCENE.GetModels().back()->Rotate(Mat4::RotateX(angle), 
-                    Settings::SelectedSpace == ID_SPACE_OBJECT);
+            SCENE.GetModels().back()->Rotate(Mat4::RotateX(angle), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[1])
         {
-            if (Settings::SelectedSpace == ID_SPACE_VIEW)
-                SCENE.GetCamera()->Rotate(Mat4::RotateY(angle));
-            else
-                SCENE.GetModels().back()->Rotate(Mat4::RotateY(angle), 
-                    Settings::SelectedSpace == ID_SPACE_OBJECT);
+            SCENE.GetModels().back()->Rotate(Mat4::RotateY(angle), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[2])
         {
-            if (Settings::SelectedSpace == ID_SPACE_VIEW)
-                SCENE.GetCamera()->Rotate(Mat4::RotateZ(angle));
-            else
-                SCENE.GetModels().back()->Rotate(Mat4::RotateZ(dx), 
-                    Settings::SelectedSpace == ID_SPACE_OBJECT);
+            SCENE.GetModels().back()->Rotate(Mat4::RotateZ(angle), Settings::SelectedSpace);
         }
     }
 
@@ -167,14 +133,6 @@ void DrawPanel::OnMouseLeftRelease(wxMouseEvent& event)
         clock_t ticksDiff = clock() - m_MouseDownTicks;
         double timeDiff = (double)ticksDiff / CLOCKS_PER_SEC;
 
-        // Save current mouse position
-        wxPoint currentMousePos = wxGetMousePosition();
-        currentMousePos.x = currentMousePos.x - this->GetScreenPosition().x;
-        currentMousePos.y = currentMousePos.y - this->GetScreenPosition().y;
-
-        // Calculate delta in x mouse movement from previous press
-        int dx = m_MouseClickPos.x - currentMousePos.x;
-
-        Scene::GetInstance().AddKeyFrame(timeDiff, dx, m_ScaleFactor);
+        Scene::GetInstance().AddKeyFrame(timeDiff, m_Offsets);
     }
 }

@@ -37,8 +37,8 @@ Frame* Animation::GetFrame(int frame)
             if (keyFrames[i]->FrameNum == frame)
             {
                 frameToReturn = new Frame();
-                frameToReturn->ModelTransform = keyFrames[i]->ModelTransform;
-                frameToReturn->CamTransform = keyFrames[i]->CamTransform;
+                frameToReturn->ObjectToWorldTransform = keyFrames[i]->ObjectToWorldTransform;
+                frameToReturn->ViewTransform = keyFrames[i]->ViewTransform;
                 frameToReturn->FrameNum = frame;
                 break;
             }
@@ -142,10 +142,9 @@ Frame* Animation::GetFrameLinearInterpolation(Frame* before, Frame* after, int f
 {
     Frame* result = new Frame();
     double t = (double)(frame - before->FrameNum) / (after->FrameNum - before->FrameNum);
-    LOG_TRACE("Animation::GetFrameLinearInterpolation: t = {:03.2f}", t);
 
-    result->ModelTransform = before->ModelTransform * (1.0 - t) + after->ModelTransform * t;
-    result->CamTransform = before->CamTransform * (1.0 - t) + after->CamTransform * t;
+    result->ObjectToWorldTransform = before->ObjectToWorldTransform * (1.0 - t) + after->ObjectToWorldTransform * t;
+    result->ViewTransform = before->ViewTransform * (1.0 - t) + after->ViewTransform * t;
     result->FrameNum = frame;
 
     return result;
@@ -156,36 +155,46 @@ Frame* Animation::GetFrameLinearInterpolation2(Frame* before, Frame* after, int 
     Frame* result = new Frame();
     double t = (double)(frame - before->FrameNum) / (after->FrameNum - before->FrameNum);
     
-    Mat4 modelTransform = before->ModelTransform;
-    Mat4 camTransform = before->CamTransform;
+    Mat4 ObjectToWorldTransform = before->ObjectToWorldTransform;
+    Mat4 ViewTransform = before->ViewTransform;
 
     Vec4 transform = Vec4(0.0, 0.0, 0.0, 1.0) * (1.0 - t) + after->Translation * t;
     Vec4 scale = Vec4(1.0, 1.0, 1.0, 1.0) * (1.0 - t) + after->Scale * t;
     Vec4 rotation = Vec4(0.0, 0.0, 0.0, 1.0) * (1.0 - t) + after->Rotation * t;
 
-    if (after->ObjectSpace)
+    if (after->Space == ID_SPACE_OBJECT)
     {
         if (after->Action[0])
-            modelTransform = Mat4::Translate(transform) * modelTransform;
+            ObjectToWorldTransform = Mat4::Translate(transform) * ObjectToWorldTransform;
         else if (after->Action[1])
-            modelTransform = Mat4::Scale(scale) * modelTransform;
+            ObjectToWorldTransform = Mat4::Scale(scale) * ObjectToWorldTransform;
         else
-            modelTransform = Mat4::RotateX(rotation[0]) * Mat4::RotateY(rotation[1]) 
-                * Mat4::RotateZ(rotation[2]) * modelTransform;
+            ObjectToWorldTransform = Mat4::RotateX(rotation[0]) * Mat4::RotateY(rotation[1]) 
+                * Mat4::RotateZ(rotation[2]) * ObjectToWorldTransform;
+    }
+    else if (after->Space == ID_SPACE_WORLD)
+    {
+        if (after->Action[0])
+            ObjectToWorldTransform = ObjectToWorldTransform * Mat4::Translate(transform);
+        else if (after->Action[1])
+            ObjectToWorldTransform = ObjectToWorldTransform * Mat4::Scale(scale);
+        else
+            ObjectToWorldTransform = ObjectToWorldTransform * Mat4::RotateX(rotation[0]) * Mat4::RotateY(rotation[1]) 
+                * Mat4::RotateZ(rotation[2]);
     }
     else
     {
         if (after->Action[0])
-            camTransform = camTransform * Mat4::Translate(transform);
+            ViewTransform = Mat4::Translate(transform) * ViewTransform;
         else if (after->Action[1])
-            camTransform = camTransform * Mat4::Scale(scale);
+            ViewTransform = Mat4::Scale(scale) * ViewTransform;
         else
-            camTransform = camTransform * Mat4::RotateX(rotation[0]) 
-                * Mat4::RotateY(rotation[1]) * Mat4::RotateZ(rotation[2]);
+            ViewTransform = Mat4::RotateX(rotation[0]) 
+                * Mat4::RotateY(rotation[1]) * Mat4::RotateZ(rotation[2]) * ViewTransform;
     }
 
-    result->ModelTransform = modelTransform;
-    result->CamTransform = camTransform;
+    result->ObjectToWorldTransform = ObjectToWorldTransform;
+    result->ViewTransform = ViewTransform;
     result->FrameNum = frame;
 
     return result;
@@ -212,15 +221,27 @@ Frame* Animation::GetFrameBezierInterpolation(int frameNum) const
 
         double fact = (temp1 * temp2 * temp3) / temp4;
 
-        sumModel = sumModel + keyFrames[i]->ModelTransform * fact;
-        sumCam = sumCam + keyFrames[i]->CamTransform * fact;
+        sumModel = sumModel + keyFrames[i]->ObjectToWorldTransform * fact;
+        sumCam = sumCam + keyFrames[i]->ViewTransform * fact;
     }
     sumModel[3][3] = 1.0;
     sumCam[3][3] = 1.0;
 
     Frame* frame = new Frame();
-    frame->ModelTransform = sumModel;
-    frame->CamTransform = sumCam;
+
+    if (!isOnlyTranslation)
+    {
+        frame->ObjectToWorldTransform = sumModel;
+        frame->ViewTransform = sumCam;
+    }
+    else
+    {
+        frame->ObjectToWorldTransform = keyFrames[0]->ObjectToWorldTransform;
+        frame->ViewTransform = keyFrames[0]->ViewTransform;
+
+        frame->ObjectToWorldTransform[3] = sumModel[3];
+        frame->ViewTransform[3] = sumCam[3];
+    }
     frame->FrameNum = frameNum;
 
     return frame;

@@ -147,33 +147,63 @@ const std::vector<Geometry*>& Model::GetGeometries() const
     return geos;
 }
 
-Mat4 Model::GetTransform() const
+const Mat4& Model::GetObjectToWorldTransform() const
 {
-    return transform;
+    return objectToWorld;
 }
 
-void Model::Translate(const Mat4& T, bool objectSpace)
+const Mat4& Model::GetViewTransform() const
 {
-    if (objectSpace)
-        transform = T * transform;
-    else
-        transform = transform * T;
+    return viewTransform;
 }
 
-void Model::Rotate(const Mat4& R, bool objectSpace)
+void Model::Translate(const Mat4& T, int space)
 {
-    if (objectSpace)
-        transform = R * transform;
-    else
-        transform = transform * R;
+    
+    switch (space)
+    {
+        case ID_SPACE_OBJECT:
+            objectToWorld = T * objectToWorld;
+            break;
+        case ID_SPACE_WORLD:
+            objectToWorld = objectToWorld * T;
+            break;
+        default:
+            viewTransform = T * viewTransform;
+            break;
+    }
 }
 
-void Model::Scale(const Mat4& S, bool objectSpace)
+void Model::Rotate(const Mat4& R, int space)
 {
-    if (objectSpace)
-        transform = S * transform;
-    else
-        transform = transform * S;
+    switch (space)
+    {
+        case ID_SPACE_OBJECT:
+            objectToWorld = R * objectToWorld;
+            break;
+        case ID_SPACE_WORLD:
+            objectToWorld = objectToWorld * R;
+            break;
+        default:
+            viewTransform = R * viewTransform;
+            break;
+    }
+}
+
+void Model::Scale(const Mat4& S, int space)
+{
+    switch (space)
+    {
+        case ID_SPACE_OBJECT:
+            objectToWorld = S * objectToWorld;
+            break;
+        case ID_SPACE_WORLD:
+            objectToWorld = objectToWorld * S;
+            break;
+        default:
+            viewTransform = S * viewTransform;
+            break;
+    }
 }
 
 Vec4 Model::CalculatePolyNormal(Polygon* p) const
