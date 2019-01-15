@@ -24,6 +24,18 @@ inline bool MaxDbl(double a, double b)
 	return a >= b;
 }
 
+inline int MinInt(int a, int b)
+{
+	if (a < b) return a;
+	return b;
+}
+
+inline int MaxInt(int a, int b)
+{
+	if (a > b) return a;
+	return b;
+}
+
 inline double ToRadians(double angleInDegrees)
 {
 	return (angleInDegrees / 180.0) * AL_PI;

@@ -1,0 +1,4 @@
+1. Frame camera on newly loaded model.
+2. Add a way to change model's color.
+3. Add Scan Convert to fill polygons with color.
+4. Add Z-Buffer (for wireframe also).

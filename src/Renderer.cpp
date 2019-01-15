@@ -214,10 +214,10 @@ void Renderer::DrawBackgroundImage(const std::string& filename, bool stretch,
                     double w = y / cy;
 
                     // 4 neighbours in input image
-                    int x0 = (int)floor(v);
-                    int y0 = (int)floor(w);
-                    int x1 = (int)ceil(v);
-                    int y1 = (int)ceil(w);
+                    int x0 = (int)v;
+                    int y0 = (int)w;
+                    int x1 = MinInt(x0 + 1, m_Width);
+                    int y1 = MinInt(y0 + 1, m_Height);
 
                     Vec4 color00 = GetStbColor(data, numChannels, x0, y0, width);
                     Vec4 color01 = GetStbColor(data, numChannels, x0, y1, width);
