@@ -15,6 +15,7 @@ public:
     void OnMouseLeftClick(wxMouseEvent& event);
     void OnMouseMove(wxMouseEvent& event);
     void OnMouseLeftRelease(wxMouseEvent& event);
+    void OnKeyDown(wxKeyEvent& event);
 
 private:
     wxPoint m_MousePrevPos;

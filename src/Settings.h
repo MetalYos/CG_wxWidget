@@ -6,6 +6,7 @@ enum CustomIDs
 {
     ID_VIEW_PERSP = 101,
     ID_VIEW_ORTHO,
+    ID_VIEW_BOUNDING_BOX,
     ID_VIEW_BACKFACE,
     ID_VIEW_BACKGROUND_OPEN,
     ID_VIEW_BACKGROUND_VIEW,
@@ -42,6 +43,8 @@ enum CustomIDs
 class Settings
 {
 public:
+    static bool IsBoundingBoxOn;
+    static bool IsBoundingBoxGeo;
     static bool IsBackFaceCullingEnabled;
     static int SelectedAction;
     static bool SelectedAxis[3];

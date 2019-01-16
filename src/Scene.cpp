@@ -147,12 +147,30 @@ void Scene::DrawModel(Model* model, const Mat4& objectToWorld, const Mat4& camTr
     const Mat4& viewTransform, const Mat4& projection, const wxColour& color)
 {
     auto geos = model->GetGeometries();
+    wxColour bbColor(255, 0, 0);
+
     for (Geometry* geo : geos)
     {
         for (Polygon* poly : geo->Polygons)
         {
             DrawPolygon(poly, model, objectToWorld, camTransform, viewTransform, projection, color);
         }
+
+        if (Settings::IsBoundingBoxOn && Settings::IsBoundingBoxGeo)
+        {
+            for (Polygon* poly : geo->BoundingBoxPolygons)
+            {
+                DrawPolygon(poly, model, objectToWorld, camTransform, viewTransform, projection, bbColor);
+            }
+        }
+    }
+
+    if (Settings::IsBoundingBoxOn && !Settings::IsBoundingBoxGeo)
+    {
+        for (Polygon* poly : model->BoundingBoxPolygons)
+        {
+            DrawPolygon(poly, model, objectToWorld, camTransform, viewTransform, projection, bbColor);
+        } 
     }
 
     DrawOrigin(Vec4(0.0, 0.0, 0.0), objectToWorld, camTransform, viewTransform, projection);

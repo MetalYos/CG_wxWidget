@@ -16,9 +16,9 @@
 
 // Log
 #include "Log.h"
-#include "Settings.h"
 
 // My header files
 #include "ALMath.h"
+#include "Settings.h"
 
 #endif // PCH_H

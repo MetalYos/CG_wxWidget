@@ -13,6 +13,18 @@ Model::Model()
 
 Model::~Model()
 {
+    // Delete BBox verticies and polygons
+    while (BoundingBoxPolygons.size() > 0)
+    {
+        Polygon* poly = BoundingBoxPolygons.back();
+        BoundingBoxPolygons.pop_back();
+
+        for (Vertex* it : poly->Vertices)
+            delete it;
+
+        delete poly;
+    }
+
     while (geos.size() > 0)
     {
         Geometry* geo = geos.back();
@@ -54,6 +66,7 @@ void Model::LoadFromFile(const std::string& filename)
             position[3] = 1.0;
             
             VertexPositions.push_back(position);
+            SetMinMaxDimensions(position);
         }
         else if (lineType == "vt")
         {
@@ -133,12 +146,18 @@ void Model::LoadFromFile(const std::string& filename)
     }
     file.close();
 
+    // Add last gemoetry in file
     AddGeometry(geo);
+
+    // Build Bounding Box
+    BuildModelBoundingBox();
 }
 
 void Model::AddGeometry(Geometry* geo)
 {
     CalculateVertexNormals(geo);
+    BuildGeoBoundingBox(geo);
+
     geos.push_back(geo);
 }
 
@@ -280,8 +299,8 @@ void Model::CalculateVertexNormals(Geometry* geo)
     }
 }
 
- void Model::AddVertexToPoly(Geometry* geo, Polygon* poly, int posID, int normID, int texID)
- {
+void Model::AddVertexToPoly(Geometry* geo, Polygon* poly, int posID, int normID, int texID)
+{
     Vertex* vert = NULL;
     // Add it's poly to it's neighbor polys vector
     // and Vertex to Vertices unordered map
@@ -289,18 +308,155 @@ void Model::CalculateVertexNormals(Geometry* geo)
     if (it != geo->Vertices.end())
     {
         vert = geo->Vertices[posID];
-        vert->NeighborPolys.push_back(poly);
     }
     else
     {
         vert = new Vertex(posID, texID, normID);
-        vert->NeighborPolys.push_back(poly);
         geo->Vertices[posID] = vert;
     }
+    vert->NeighborPolys.push_back(poly);
 
     // Add vertex to poly
     poly->Vertices.push_back(vert);
 
     // Add the vertex position to the center calculation
     poly->Center += VertexPositions[posID];
- }
+
+    // Set maximum and minimum dimensions
+    if (geo->Vertices.size() == 1)
+    {
+        geo->MaxDimensions = VertexPositions[posID];
+        geo->MinDimensions = VertexPositions[posID];
+    }
+    else
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            geo->MaxDimensions[i] = ((VertexPositions[posID])[i] > geo->MaxDimensions[i]) ? 
+                (VertexPositions[posID])[i] : geo->MaxDimensions[i];
+            geo->MinDimensions[i] = ((VertexPositions[posID])[i] < geo->MinDimensions[i]) ? 
+                (VertexPositions[posID])[i] : geo->MinDimensions[i];
+        }
+    }
+}
+
+void Model::BuildGeoBoundingBox(Geometry* geo)
+{
+    if (geo == NULL)
+        return;
+    
+    geo->BoundingBoxPolygons = BuildBoundingBox(geo->MinDimensions, geo->MaxDimensions);
+}
+
+void Model::BuildModelBoundingBox()
+{
+    BoundingBoxPolygons = BuildBoundingBox(minDimensions, maxDimensions);
+    LOG_INFO("Model dimensions: ({0}, {1}, {2}).", 
+        abs(maxDimensions[0] - minDimensions[0]) / 2.0,
+        abs(maxDimensions[1] - minDimensions[1]) / 2.0,
+        abs(maxDimensions[2] - minDimensions[2]) / 2.0);
+}
+
+void Model::SetMinMaxDimensions(const Vec4& vertPos)
+{
+    if (VertexPositions.size() == 1)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            maxDimensions[i] = vertPos[i];
+            minDimensions[i] = vertPos[i];
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            maxDimensions[i] = (vertPos[i] > maxDimensions[i]) ? vertPos[i] : maxDimensions[i];
+            minDimensions[i] = (vertPos[i] < minDimensions[i]) ? vertPos[i] : minDimensions[i];
+        }
+    }
+}
+
+std::vector<Polygon*> Model::BuildBoundingBox(const Vec4& minDimensions, const Vec4& maxDimensions)
+{
+    std::vector<Polygon*> polygons;
+
+    int start = VertexPositions.size();
+    VertexPositions.push_back(Vec4(minDimensions[0], minDimensions[1], maxDimensions[2])); // front bottom left
+    VertexPositions.push_back(Vec4(minDimensions[0], maxDimensions[1], maxDimensions[2])); // front top left
+    VertexPositions.push_back(Vec4(maxDimensions[0], maxDimensions[1], maxDimensions[2])); // front top right
+    VertexPositions.push_back(Vec4(maxDimensions[0], minDimensions[1], maxDimensions[2])); // front bottom right
+    VertexPositions.push_back(Vec4(minDimensions[0], minDimensions[1], minDimensions[2])); // back bottom left
+    VertexPositions.push_back(Vec4(minDimensions[0], maxDimensions[1], minDimensions[2])); // back top left
+    VertexPositions.push_back(Vec4(maxDimensions[0], maxDimensions[1], minDimensions[2])); // back top right
+    VertexPositions.push_back(Vec4(maxDimensions[0], minDimensions[1], minDimensions[2])); // back bottom right
+
+    // Front face polygon
+    Polygon* front = new Polygon();
+    front->Vertices.push_back(new Vertex(start));
+    front->Vertices.push_back(new Vertex(start + 1));
+    front->Vertices.push_back(new Vertex(start + 2));
+    front->Vertices.push_back(new Vertex(start + 3));
+    front->Normal = Vec4(0.0, 0.0, 1.0);
+    front->Center = Vec4((maxDimensions[0] - minDimensions[0]) / 2.0,
+        (maxDimensions[1] - minDimensions[1]) / 2.0, maxDimensions[2]);
+
+    // Back face Polygon
+    Polygon* back = new Polygon();
+    back->Vertices.push_back(new Vertex(start + 4));
+    back->Vertices.push_back(new Vertex(start + 5));
+    back->Vertices.push_back(new Vertex(start + 6));
+    back->Vertices.push_back(new Vertex(start + 7));
+    back->Normal = Vec4(0.0, 0.0, -1.0);
+    back->Center = Vec4((maxDimensions[0] - minDimensions[0]) / 2.0,
+        (maxDimensions[1] - minDimensions[1]) / 2.0, minDimensions[2]);
+
+    // Left face Polygon
+    Polygon* left = new Polygon();
+    left->Vertices.push_back(new Vertex(start + 4));
+    left->Vertices.push_back(new Vertex(start + 5));
+    left->Vertices.push_back(new Vertex(start + 1));
+    left->Vertices.push_back(new Vertex(start));
+    left->Normal = Vec4(-1.0, 0.0, 0.0);
+    left->Center = Vec4(minDimensions[0], (maxDimensions[1] - minDimensions[1]) / 2.0, 
+        (maxDimensions[2] - minDimensions[2]) / 2.0);
+
+    // Right face Polygon
+    Polygon* right = new Polygon();
+    right->Vertices.push_back(new Vertex(start + 7));
+    right->Vertices.push_back(new Vertex(start + 6));
+    right->Vertices.push_back(new Vertex(start + 2));
+    right->Vertices.push_back(new Vertex(start + 3));
+    right->Normal = Vec4(1.0, 0.0, 0.0);
+    right->Center = Vec4(maxDimensions[0], (maxDimensions[1] - minDimensions[1]) / 2.0, 
+        (maxDimensions[2] - minDimensions[2]) / 2.0);
+
+    // Top face Polygon
+    Polygon* top = new Polygon();
+    top->Vertices.push_back(new Vertex(start + 1));
+    top->Vertices.push_back(new Vertex(start + 5));
+    top->Vertices.push_back(new Vertex(start + 6));
+    top->Vertices.push_back(new Vertex(start + 2));
+    top->Normal = Vec4(0.0, 1.0, 0.0);
+    top->Center = Vec4((maxDimensions[0] - minDimensions[0]) / 2.0, maxDimensions[1], 
+        (maxDimensions[2] - minDimensions[2]) / 2.0);
+
+    // Bottom face Polygon
+    Polygon* bottom = new Polygon();
+    bottom->Vertices.push_back(new Vertex(start));
+    bottom->Vertices.push_back(new Vertex(start + 4));
+    bottom->Vertices.push_back(new Vertex(start + 7));
+    bottom->Vertices.push_back(new Vertex(start + 3));
+    bottom->Normal = Vec4(0.0, -1.0, 0.0);
+    bottom->Center = Vec4((maxDimensions[0] - minDimensions[0]) / 2.0, minDimensions[1], 
+        (maxDimensions[2] - minDimensions[2]) / 2.0);
+    
+    polygons.push_back(front);
+    polygons.push_back(back);
+    polygons.push_back(left);
+    polygons.push_back(right);
+    polygons.push_back(top);
+    polygons.push_back(bottom);
+
+    return polygons;
+}

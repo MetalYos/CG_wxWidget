@@ -11,6 +11,7 @@ DrawPanel::DrawPanel(wxFrame* parent)
     Connect(wxEVT_LEFT_DOWN, wxMouseEventHandler(DrawPanel::OnMouseLeftClick));
     Connect(wxEVT_MOTION, wxMouseEventHandler(DrawPanel::OnMouseMove));
     Connect(wxEVT_LEFT_UP, wxMouseEventHandler(DrawPanel::OnMouseLeftRelease));
+    Connect(wxEVT_KEY_DOWN, wxKeyEventHandler(DrawPanel::OnKeyDown));
 }
 
 void DrawPanel::OnResize(wxSizeEvent& event)
@@ -135,4 +136,23 @@ void DrawPanel::OnMouseLeftRelease(wxMouseEvent& event)
 
         Scene::GetInstance().AddKeyFrame(timeDiff, m_Offsets);
     }
+}
+
+void DrawPanel::OnKeyDown(wxKeyEvent& event)
+{
+    int key = (int)event.GetKeyCode();
+    LOG_TRACE("DrawPanel::OnKeyDown: Pressed on key {0}", key);
+
+    switch (key)
+    {
+        case 71: // G key
+            Settings::IsBoundingBoxGeo = !Settings::IsBoundingBoxGeo;
+            LOG_TRACE("DrawPanel::OnKeyDown: Changed Settings::IsBoundingBoxGeo to {0}", 
+                Settings::IsBoundingBoxGeo);
+            break;
+    }
+
+    INVALIDATE();
+
+    event.Skip();
 }

@@ -17,6 +17,8 @@ public:
     void OnSwitchProjection(wxCommandEvent& event);
     void OnSwitchToOrthoUI(wxUpdateUIEvent& event);
     void OnSwitchToPerspUI(wxUpdateUIEvent& event);
+    void OnBoundingBox(wxCommandEvent& event);
+    void OnBoundingBoxUI(wxUpdateUIEvent& event);
     void OnBackFaceCulling(wxCommandEvent& event);
     void OnBackFaceCullingUI(wxUpdateUIEvent& event);
     void OnBackgroundOpen(wxCommandEvent& event);

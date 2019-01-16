@@ -1,5 +1,7 @@
 #include "Settings.h"
 
+bool Settings::IsBoundingBoxOn = false;
+bool Settings::IsBoundingBoxGeo = false;
 bool Settings::IsBackFaceCullingEnabled = true;
 int Settings::SelectedAction = ID_ACTION_TRANSLATE;
 bool Settings::SelectedAxis[3] { true, false, false };

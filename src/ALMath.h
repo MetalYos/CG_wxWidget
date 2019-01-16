@@ -14,14 +14,26 @@ struct Vec4Line
 	Vec4 P2;
 };
 
-inline bool MinDbl(double a, double b)
+inline bool IsMinDbl(double a, double b)
 {
 	return a < b;
 }
 
-inline bool MaxDbl(double a, double b)
+inline bool IsMaxDbl(double a, double b)
 {
 	return a >= b;
+}
+
+inline int MinDbl(int a, int b)
+{
+	if (a < b) return a;
+	return b;
+}
+
+inline int MaxDbl(int a, int b)
+{
+	if (a > b) return a;
+	return b;
 }
 
 inline int MinInt(int a, int b)

@@ -58,6 +58,9 @@ void MainWindow::OnUpdateUI(wxUpdateUIEvent& event)
         case ID_VIEW_PERSP:
             OnSwitchToPerspUI(event);
             break;
+        case ID_VIEW_BOUNDING_BOX:
+            OnBoundingBoxUI(event);
+            break;
         case ID_VIEW_BACKFACE:
             OnBackFaceCullingUI(event);
             break;
@@ -107,7 +110,6 @@ void MainWindow::OnUpdateUI(wxUpdateUIEvent& event)
 
 void MainWindow::OnSwitchProjection(wxCommandEvent& event)
 {
-    LOG_TRACE("MainWindow::OnSwitchProjection: Switching Projection");
     int id = event.GetId();
     Scene::GetInstance().GetCamera()->SwitchToProjection(id == ID_VIEW_PERSP);
     INVALIDATE();
@@ -123,6 +125,17 @@ void MainWindow::OnSwitchToPerspUI(wxUpdateUIEvent& event)
 {
     bool isPerspective = Scene::GetInstance().GetCamera()->IsPerspective();
     event.Check(isPerspective);
+}
+
+void MainWindow::OnBoundingBox(wxCommandEvent& event)
+{
+    Settings::IsBoundingBoxOn = !Settings::IsBoundingBoxOn;
+    INVALIDATE();
+}
+
+void MainWindow::OnBoundingBoxUI(wxUpdateUIEvent& event)
+{
+    event.Check(Settings::IsBoundingBoxOn);
 }
 
 void MainWindow::OnBackFaceCulling(wxCommandEvent& event)
@@ -346,6 +359,9 @@ void MainWindow::CreateMenuBar()
     wxMenu* view = new wxMenu();
     // Create Projection SubMenu
     CreateProjectionSubMenu(view);
+    view->AppendCheckItem(ID_VIEW_BOUNDING_BOX, wxT("B&ounding Box"));
+    Connect(ID_VIEW_BOUNDING_BOX, wxEVT_COMMAND_MENU_SELECTED, 
+        wxCommandEventHandler(MainWindow::OnBoundingBox));
     view->AppendCheckItem(ID_VIEW_BACKFACE, wxT("&BackFace Culling"));
     Connect(ID_VIEW_BACKFACE, wxEVT_COMMAND_MENU_SELECTED, 
         wxCommandEventHandler(MainWindow::OnBackFaceCulling));

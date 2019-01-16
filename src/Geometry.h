@@ -33,4 +33,8 @@ public:
 public:
     std::vector<Polygon*> Polygons;
     std::unordered_map<int, Vertex*> Vertices;
+
+    Vec4 MaxDimensions;
+    Vec4 MinDimensions;
+    std::vector<Polygon*> BoundingBoxPolygons;
 };
