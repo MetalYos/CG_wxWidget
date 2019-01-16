@@ -70,7 +70,7 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
 
     if (Settings::SelectedAction == ID_ACTION_TRANSLATE)
     {
-        double offset = -dx / Settings::MouseSensitivity[0];
+        double offset = dx / Settings::MouseSensitivity[0];
         m_Offsets[0] += offset;
         if (Settings::SelectedAxis[0])
         {

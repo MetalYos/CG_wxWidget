@@ -20,6 +20,9 @@ public:
     void Rotate(const Mat4& R, int space = ID_SPACE_OBJECT);
     void Scale(const Mat4& S, int space = ID_SPACE_OBJECT);
 
+    Vec4 GetModelDimensions() const;
+    Vec4 GetModelBBoxCenter() const;
+
 private:
     Vec4 CalculatePolyNormal(Polygon* p) const;
     Vec4 CalculateVertexNormal(Vertex* v) const;

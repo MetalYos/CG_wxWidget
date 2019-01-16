@@ -225,6 +225,26 @@ void Model::Scale(const Mat4& S, int space)
     }
 }
 
+Vec4 Model::GetModelDimensions() const
+{
+    Vec4 result;
+    for (int i = 0; i < 3; i++)
+        result[i] = abs(maxDimensions[i] - minDimensions[i]);
+    
+    return result;
+}
+
+Vec4 Model::GetModelBBoxCenter() const
+{
+    Vec4 result;
+    Vec4 modelDimensions = GetModelDimensions();
+
+    for (int i = 0; i < 3; i++)
+        result[i] = minDimensions[i] + modelDimensions[i] / 2.0;
+    
+    return result;
+}
+
 Vec4 Model::CalculatePolyNormal(Polygon* p) const
 {
     Vec4 normal(0.0, 0.0, 1.0, 0.0);
@@ -253,7 +273,10 @@ Vec4 Model::CalculatePolyNormal(Polygon* p) const
             }
         }
 
-        normal = Vec4::Cross(e1, e2); // TODO: maybe change order (or negate)
+        Vec4 temp = Vec4::Cross(e1, e2); // TODO: maybe change order (or negate)
+        if (Vec4::Length3(temp) >= AL_DBL_EPSILON)
+            normal = temp;
+        
         normal = Vec4::Normalize3(normal);
         normal[3] = 0.0;
     }
@@ -351,10 +374,9 @@ void Model::BuildGeoBoundingBox(Geometry* geo)
 void Model::BuildModelBoundingBox()
 {
     BoundingBoxPolygons = BuildBoundingBox(minDimensions, maxDimensions);
-    LOG_INFO("Model dimensions: ({0}, {1}, {2}).", 
-        abs(maxDimensions[0] - minDimensions[0]) / 2.0,
-        abs(maxDimensions[1] - minDimensions[1]) / 2.0,
-        abs(maxDimensions[2] - minDimensions[2]) / 2.0);
+
+    Vec4 dimensions = GetModelDimensions();
+    LOG_INFO("Model dimensions: ({0}, {1}, {2}).", dimensions[0], dimensions[1], dimensions[2]);
 }
 
 void Model::SetMinMaxDimensions(const Vec4& vertPos)

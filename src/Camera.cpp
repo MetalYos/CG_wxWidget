@@ -53,7 +53,7 @@ void Camera::SetOrthographic(double width, double aspectRatio, double near, doub
 void Camera::SetPerspective(double left, double right, double top, double bottom,
     double near, double far)
 {
-    // Create OpenGL Orthographic Matrix
+    // Create OpenGL Perspective Matrix
     Mat4 result;
     result[0][0] = (2.0 * near) / (right - left);
     result[1][1] = (2.0 * near) / (top - bottom);
@@ -62,6 +62,7 @@ void Camera::SetPerspective(double left, double right, double top, double bottom
     result[0][2] = (right + left) / (right - left);
     result[1][2] = (top + bottom) / (top - bottom);
     result[3][2] = -1.0;
+    result[2][3] = -(2.0 * far * near) / (far - near);
 
     // Transform matrix to be row major
     result.Transpose();
@@ -113,6 +114,7 @@ void Camera::LookAt(const Vec4& eye, const Vec4& at, const Vec4& up)
     Vec4 upReal = Vec4::Normalize3(Vec4::Cross(forward, right));
     camParams.Up = upReal;
 
+    /*
     Mat4 rotate;
     rotate[0] = right;
     rotate[1] = upReal;
@@ -121,6 +123,17 @@ void Camera::LookAt(const Vec4& eye, const Vec4& at, const Vec4& up)
     Mat4 translate = Mat4::Translate(-eye);
 
     worldToView = translate * rotate;
+    */
+
+    Mat4 transform;
+    transform[0] = right;
+    transform[1] = upReal;
+    transform[2] = forward;
+    transform[3][0] = -Vec4::Dot3(right, eye);
+    transform[3][1] = -Vec4::Dot3(upReal, eye);
+    transform[3][2] = -Vec4::Dot3(forward, eye);
+
+    worldToView = transform;
 }
 
 const OrthographicParameters& Camera::GetOrthographicParameters() const
@@ -144,13 +157,11 @@ void Camera::SwitchToProjection(bool perspective)
     {
         projection = perspProjection;
         isPerspective = true;
-        LOG_TRACE("Camera::SwitchToProjection: Switched to Perspective Projection");
     }
     if(!perspective && isPerspective)
     {
         projection = orthoProjection;
         isPerspective = false;
-        LOG_TRACE("Camera::SwitchToProjection: Switched to Orthographic Projection");
     }
 }
 

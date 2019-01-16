@@ -43,6 +43,7 @@ enum CustomIDs
 class Settings
 {
 public:
+    static double CameraFrameOffset;
     static bool IsBoundingBoxOn;
     static bool IsBoundingBoxGeo;
     static bool IsBackFaceCullingEnabled;

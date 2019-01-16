@@ -1,6 +1,4 @@
-0. Add bounding boxes to models.
-1. Frame camera on newly loaded model.
-2. Add a way to change model's color.
-3. Add Scan Convert to fill polygons with color.
-4. Add Z-Buffer (for wireframe also).
-5. Add BuCubic interpolation to background images.
+1. Add a way to change model's color.
+2. Add Scan Convert to fill polygons with color.
+3. Add Z-Buffer (for wireframe also).
+4. Add BuCubic interpolation to background images.

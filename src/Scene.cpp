@@ -3,12 +3,18 @@
 Scene::Scene()
 {
     camera = new Camera();
-    camera->LookAt(Vec4(0.0, 0.0, -10.0), Vec4(0.0, 0.0, 0.0), Vec4(0.0, -1.0, 0.0));
 }
 
 Scene::~Scene()
 {
     delete camera;
+
+    while (models.size() > 0)
+    {
+        Model* model = models.back();
+        models.pop_back();
+        delete model;
+    }
 }
 
 bool Scene::LoadModelFromFile(const std::string& filename)
@@ -19,6 +25,7 @@ bool Scene::LoadModelFromFile(const std::string& filename)
     models.push_back(model);
 
     // Frame camera on model
+    FrameCameraOnModel(model);
 
     return true;
 }
@@ -36,6 +43,37 @@ Camera* Scene::GetCamera()
 Renderer& Scene::GetRenderer()
 {
     return renderer;
+}
+
+void Scene::FrameCameraOnModel(Model* model)
+{
+    Vec4 dimensions = model->GetModelDimensions() * model->GetObjectToWorldTransform();
+    Vec4 center = model->GetModelBBoxCenter() * model->GetObjectToWorldTransform();
+    double maxDim = MaxDbl(MaxDbl(dimensions[0], dimensions[1]), dimensions[2]);
+    LOG_INFO("Model BBox Center: ({0}, {1}, {2})", center[0], center[1], center[2]);
+
+    // Set Camera position
+    double radius = maxDim / 2.0;
+    double f = sin(ToRadians(camera->GetPerspectiveParameters().FOV / 2.0));
+    if (dimensions[0] > dimensions[1])
+    {
+        f = sin(ToRadians(renderer.GetAspectRatio() * camera->GetPerspectiveParameters().FOV / 2.0));
+    }
+    double zPos = abs(radius / f) * Settings::CameraFrameOffset;
+    Vec4 eye = center - Vec4(0.0, 0.0, -zPos);
+    camera->LookAt(eye, center, Vec4(0.0, -1.0, 0.0));
+    LOG_INFO("Moved camera to: ({0}, {1}, {2})", eye[0], eye[1], eye[2]);
+
+    // Set Orthographic Projection
+    bool isPerspective = camera->IsPerspective();
+	double orthoWidth = (dimensions[0] > dimensions[1]) ? 
+        dimensions[0] : renderer.GetAspectRatio() * dimensions[1];
+    orthoWidth *= Settings::CameraFrameOffset;
+	camera->SetOrthographic(orthoWidth, renderer.GetAspectRatio(), 1.0, 1000.0);
+    LOG_INFO("Set Orthographic Projection Width to: {0}", orthoWidth);
+
+    // Switch camera to the correct projection (the one that is selected)
+    camera->SwitchToProjection(isPerspective);
 }
 
 void Scene::Resized(int width, int height)
@@ -184,28 +222,22 @@ void Scene::DrawOrigin(const Vec4& origin, const Mat4& objectToWorld,
     Vec4 colorVec(255, 0, 0);
     wxColour color((unsigned int)colorVec[0], (unsigned int)colorVec[1], 
         (unsigned int)colorVec[2]);
-
     Vec4 pos1 = origin;
     Vec4 pos2 = origin + Vec4(1.0, 0.0, 0.0) * sizeFactor;
-
     DrawEdge(pos1, pos2, objectToWorld, camTransform, viewTransform, projection, color, 1);
 
     // Draw Y axis
     colorVec = Vec4(0, 255, 0);
     color = wxColour((unsigned int)colorVec[0], (unsigned int)colorVec[1], 
         (unsigned int)colorVec[2]);
-
     pos2 = origin + Vec4(0.0, 1.0, 0.0) * sizeFactor;
-
     DrawEdge(pos1, pos2, objectToWorld, camTransform, viewTransform, projection, color, 1);
 
     // Draw Z axis
     colorVec = Vec4(0, 0, 255);
     color = wxColour((unsigned int)colorVec[0], (unsigned int)colorVec[1], 
         (unsigned int)colorVec[2]);
-
     pos2 = origin + Vec4(0.0, 0.0, 1.0) * sizeFactor;
-
     DrawEdge(pos1, pos2, objectToWorld, camTransform, viewTransform, projection, color, 1);
 }
 

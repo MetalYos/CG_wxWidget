@@ -17,7 +17,6 @@ void Renderer::SetHeight(int height)
 {
 	m_Height = height;
     BuildToScreenMatrix();
-    LOG_TRACE("Renderer::SetHeight: Changed renderer height to: {0}", m_Height);
 }
 
 int Renderer::GetHeight() const
@@ -29,7 +28,6 @@ void Renderer::SetWidth(int width)
 {
 	m_Width = width;
     BuildToScreenMatrix();
-    LOG_TRACE("Renderer::SetWidth: Changed renderer width to: {0}", m_Width);
 }
 
 int Renderer::GetWidth() const
@@ -43,7 +41,6 @@ double Renderer::GetAspectRatio() const
 	if (m_Height != 0)
 		aspectRatio = (double)m_Width / (double)m_Height;
 	
-    LOG_TRACE("Renderer::GetAspectRatio: Calculated Aspect Ratio: {0}", aspectRatio);
 	return aspectRatio;
 }
 
@@ -177,9 +174,8 @@ void Renderer::DrawBackgroundImage(const std::string& filename, bool stretch,
     int width, height, numChannels;
     unsigned char *data = stbi_load(filename.c_str(), &width, &height, &numChannels, 0);
 
-    LOG_TRACE("Renderer::DrawBackgroundImage: Image Width: {0}", width);
-    LOG_TRACE("Renderer::DrawBackgroundImage: Image Height: {0}", height);
-    LOG_TRACE("Renderer::DrawBackgroundImage: Image Number of Channels: {0}", numChannels);
+    LOG_INFO("Loaded Background image with size: ({0}, {1})", width, height);
+    LOG_INFO("Loaded Background image with Number of Channels: {0}", numChannels);
     
     if (data == NULL)
         return;

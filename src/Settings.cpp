@@ -1,5 +1,6 @@
 #include "Settings.h"
 
+double Settings::CameraFrameOffset = 1.3;
 bool Settings::IsBoundingBoxOn = false;
 bool Settings::IsBoundingBoxGeo = false;
 bool Settings::IsBackFaceCullingEnabled = true;

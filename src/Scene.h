@@ -27,6 +27,10 @@ class Scene
         Camera* GetCamera();
         Renderer& GetRenderer();
 
+        // Camera Methods
+        void FrameCameraOnModel(Model* model);
+
+        // Animation methods
         void StartRecordingAnimation();
         void AddKeyFrame(double timeDiff = 0.0, const Vec4& offsets = Vec4(0.0, 1.0, 0.0));
         bool PlayAnimation();
