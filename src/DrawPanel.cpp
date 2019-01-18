@@ -65,7 +65,7 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
     // Save current mouse pos as previous mouse pos
     m_MousePrevPos = currentMousePos;
 
-    if ((SCENE.GetModels().size() == 0) || !m_IsMouseLeftButtonClicked)
+    if ((SCENE.GetSelectedModel() == nullptr) || !m_IsMouseLeftButtonClicked)
         return;
 
     if (Settings::SelectedAction == ID_ACTION_TRANSLATE)
@@ -74,15 +74,15 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
         m_Offsets[0] += offset;
         if (Settings::SelectedAxis[0])
         {
-            SCENE.GetModels().back()->Translate(Mat4::Translate(offset, 0.0, 0.0), Settings::SelectedSpace);
+            SCENE.GetSelectedModel()->Translate(Mat4::Translate(offset, 0.0, 0.0), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[1])
         {
-            SCENE.GetModels().back()->Translate(Mat4::Translate(0.0, offset, 0.0), Settings::SelectedSpace);
+            SCENE.GetSelectedModel()->Translate(Mat4::Translate(0.0, offset, 0.0), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[2])
         {
-            SCENE.GetModels().back()->Translate(Mat4::Translate(0.0, 0.0, offset), Settings::SelectedSpace);
+            SCENE.GetSelectedModel()->Translate(Mat4::Translate(0.0, 0.0, offset), Settings::SelectedSpace);
         }
     }
     else if (Settings::SelectedAction == ID_ACTION_SCALE)
@@ -94,15 +94,15 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
         
         if (Settings::SelectedAxis[0])
         {
-            SCENE.GetModels().back()->Scale(Mat4::Scale(scale, 1.0, 1.0), Settings::SelectedSpace);
+            SCENE.GetSelectedModel()->Scale(Mat4::Scale(scale, 1.0, 1.0), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[1])
         {
-            SCENE.GetModels().back()->Scale(Mat4::Scale(1.0, scale, 1.0), Settings::SelectedSpace);
+            SCENE.GetSelectedModel()->Scale(Mat4::Scale(1.0, scale, 1.0), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[2])
         {
-            SCENE.GetModels().back()->Scale(Mat4::Scale(1.0, 1.0, scale), Settings::SelectedSpace);
+            SCENE.GetSelectedModel()->Scale(Mat4::Scale(1.0, 1.0, scale), Settings::SelectedSpace);
         }
     }
     else if (Settings::SelectedAction == ID_ACTION_ROTATE)
@@ -111,15 +111,15 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
         m_Offsets[2] += angle;
         if (Settings::SelectedAxis[0])
         {
-            SCENE.GetModels().back()->Rotate(Mat4::RotateX(angle), Settings::SelectedSpace);
+            SCENE.GetSelectedModel()->Rotate(Mat4::RotateX(angle), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[1])
         {
-            SCENE.GetModels().back()->Rotate(Mat4::RotateY(angle), Settings::SelectedSpace);
+            SCENE.GetSelectedModel()->Rotate(Mat4::RotateY(angle), Settings::SelectedSpace);
         }
         if (Settings::SelectedAxis[2])
         {
-            SCENE.GetModels().back()->Rotate(Mat4::RotateZ(angle), Settings::SelectedSpace);
+            SCENE.GetSelectedModel()->Rotate(Mat4::RotateZ(angle), Settings::SelectedSpace);
         }
     }
 
@@ -134,7 +134,7 @@ void DrawPanel::OnMouseLeftRelease(wxMouseEvent& event)
         clock_t ticksDiff = clock() - m_MouseDownTicks;
         double timeDiff = (double)ticksDiff / CLOCKS_PER_SEC;
 
-        Scene::GetInstance().AddKeyFrame(timeDiff, m_Offsets);
+        SCENE.AddKeyFrame(timeDiff, m_Offsets);
     }
 }
 
@@ -147,8 +147,15 @@ void DrawPanel::OnKeyDown(wxKeyEvent& event)
     {
         case 71: // G key
             Settings::IsBoundingBoxGeo = !Settings::IsBoundingBoxGeo;
-            LOG_TRACE("DrawPanel::OnKeyDown: Changed Settings::IsBoundingBoxGeo to {0}", 
-                Settings::IsBoundingBoxGeo);
+            break;
+        case WXK_LEFT:
+            SCENE.SelectPreviousModel();
+            break;
+        case WXK_RIGHT:
+            SCENE.SelectNextModel();
+            break;
+        case WXK_SPACE:
+            SCENE.ClearModelSelection();
             break;
     }
 

@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "Scene.h"
 #include "CAnimationDialog.h"
+#include "CMaterialDialog.h"
 
 MainWindow::MainWindow(const wxString& title)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(1280, 720))
@@ -24,11 +25,6 @@ MainWindow::MainWindow(const wxString& title)
 }
 
 /**************************** Event Handlers ****************************/
-void MainWindow::OnQuit(wxCommandEvent& event)
-{
-    Close(true);
-}
-
 void MainWindow::OnOpenFile(wxCommandEvent& event)
 {
     wxFileDialog* fileDialog = new wxFileDialog(this, wxT("Open a model"), wxT(""), wxT(""),
@@ -45,6 +41,18 @@ void MainWindow::OnOpenFile(wxCommandEvent& event)
             dial->ShowModal();
         }
     }
+}
+
+void MainWindow::OnClearAll(wxCommandEvent& event)
+{
+    SCENE.ClearScene();
+    INVALIDATE();
+    LOG_INFO("Scene was cleared!");
+}
+
+void MainWindow::OnQuit(wxCommandEvent& event)
+{
+    Close(true);
 }
 
 void MainWindow::OnUpdateUI(wxUpdateUIEvent& event)
@@ -275,6 +283,7 @@ void MainWindow::OnAnimationSettings(wxCommandEvent& event)
 {
     AnimationDialog* dlg = new AnimationDialog("Animation Options");
     dlg->ShowModal();
+    delete dlg;
 }
 
 void MainWindow::OnAnimationRecord(wxCommandEvent& event)
@@ -283,7 +292,6 @@ void MainWindow::OnAnimationRecord(wxCommandEvent& event)
         return;
     
     Settings::IsRecording = !Settings::IsRecording;
-    LOG_TRACE("MainWindow::OnAnimationRecord: Changed IsRecording to {0}", Settings::IsRecording);
     if (Settings::IsRecording)
     {
         Scene::GetInstance().AddKeyFrame();
@@ -334,6 +342,21 @@ void MainWindow::OnAnimationNormalPlaybackSpeed(wxCommandEvent& event)
     Scene::GetInstance().NormalPlaybackSpeed();
 }
 
+void MainWindow::OnRenderingSetMaterial(wxCommandEvent& event)
+{
+    if (SCENE.GetSelectedModel() == nullptr)
+        return;
+    
+    MaterialDialog dlg("Material Options");
+    if (dlg.ShowModal() == wxID_OK)
+    {
+        SCENE.SetMaterial(dlg.GetMaterial());
+        INVALIDATE();
+    }
+    dlg.Close();
+    dlg.Destroy();
+}
+
 /**************************** Private Methods ****************************/
 
 void MainWindow::CreateMenuBar()
@@ -341,112 +364,25 @@ void MainWindow::CreateMenuBar()
     // Create MenuBar
     wxMenuBar* menubar = new wxMenuBar();
     
-    // Create File Menu
-    wxMenu* file = new wxMenu();
-    
-    // Create Open menu item and connect it
-    file->Append(wxID_OPEN, wxT("&Open Model"), wxT("Open a new model file"));
-    Connect(wxID_OPEN, wxEVT_COMMAND_MENU_SELECTED, 
-        wxCommandEventHandler(MainWindow::OnOpenFile));
-    file->AppendSeparator();
-    // Create Exit menu item and connect it
-    file->Append(wxID_EXIT, wxT("&Exit"));
-    Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MainWindow::OnQuit));
-    // Append the file menu to the menubar
+    // Create and append File Menu
+    wxMenu* file = CreateFileMenu();
     menubar->Append(file, wxT("&File"));
 
-    // Create View menu
-    wxMenu* view = new wxMenu();
-    // Create Projection SubMenu
-    CreateProjectionSubMenu(view);
-    view->AppendCheckItem(ID_VIEW_BOUNDING_BOX, wxT("B&ounding Box"));
-    Connect(ID_VIEW_BOUNDING_BOX, wxEVT_COMMAND_MENU_SELECTED, 
-        wxCommandEventHandler(MainWindow::OnBoundingBox));
-    view->AppendCheckItem(ID_VIEW_BACKFACE, wxT("&BackFace Culling"));
-    Connect(ID_VIEW_BACKFACE, wxEVT_COMMAND_MENU_SELECTED, 
-        wxCommandEventHandler(MainWindow::OnBackFaceCulling));
-    // Create Background SubMenu
-    CreateBackgroundSubMenu(view);
-
-    // Append the View Menu to the menubar
+    // Create and append View menu
+    wxMenu* view = CreateViewMenu();
     menubar->Append(view, wxT("&View"));
 
-    // Create Actions Menu
-    wxMenu* actions = new wxMenu();
-    actions->AppendCheckItem(ID_ACTION_TRANSLATE, wxT("&Translte"));
-    Connect(ID_ACTION_TRANSLATE, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnChangeAction));
-    actions->AppendCheckItem(ID_ACTION_SCALE, wxT("&Scale"));
-    Connect(ID_ACTION_SCALE, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnChangeAction));
-    actions->AppendCheckItem(ID_ACTION_ROTATE, wxT("&Rotate"));
-    Connect(ID_ACTION_ROTATE, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnChangeAction));
-    //Create Axis submenu
-    wxMenu* axis = new wxMenu();
-    axis->AppendCheckItem(ID_AXIS_X, wxT("X"));
-    Connect(ID_AXIS_X, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnChangeAxis));
-    axis->AppendCheckItem(ID_AXIS_Y, wxT("Y"));
-    Connect(ID_AXIS_Y, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnChangeAxis));
-    axis->AppendCheckItem(ID_AXIS_Z, wxT("Z"));
-    Connect(ID_AXIS_Z, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnChangeAxis));
-    // Create Space submenu
-    wxMenu* space = new wxMenu();
-    space->AppendCheckItem(ID_SPACE_OBJECT, wxT("Object"));
-    Connect(ID_SPACE_OBJECT, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnChangeSpace));
-    space->AppendCheckItem(ID_SPACE_WORLD, wxT("World"));
-    Connect(ID_SPACE_WORLD, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnChangeSpace));
-    space->AppendCheckItem(ID_SPACE_VIEW, wxT("View"));
-    Connect(ID_SPACE_VIEW, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnChangeSpace));
-    // Append axis and space submenus to actions menu
-    actions->AppendSeparator();
-    actions->AppendSubMenu(axis, wxT("&Axis"));
-    actions->AppendSeparator();
-    actions->AppendSubMenu(space, wxT("&Space"));
-    // Append the Actions Menu to the menubar
+    // Create and append Actions Menu
+    wxMenu* actions = CreateActionsMenu();
     menubar->Append(actions, wxT("&Actions"));
 
-    // Create Animation Menu
-    wxMenu* animation = new wxMenu();
-    animation->Append(ID_ANIMATION_SETTINGS, wxT("&Settings..."));
-    Connect(ID_ANIMATION_SETTINGS, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnAnimationSettings));
-    animation->AppendCheckItem(ID_ANIMATION_RECORD, wxT("&Record"));
-    Connect(ID_ANIMATION_RECORD, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnAnimationRecord));
-    animation->AppendSeparator();
-    animation->Append(ID_ANIMATION_START_PLAYING, wxT("Start &Playing"));
-    Connect(ID_ANIMATION_START_PLAYING, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnAnimationPlay));
-    // Create Playback Speed submenu
-    wxMenu* speed = new wxMenu();
-    speed->Append(ID_ANIMATION_SPEED_INCREASE, wxT("&Increase by 25%"));
-    Connect(ID_ANIMATION_SPEED_INCREASE, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnAnimationIncreasePlaybackSpeed));
-    speed->Append(ID_ANIMATION_SPEED_DECREASE, wxT("&Decrease by 25%"));
-    Connect(ID_ANIMATION_SPEED_DECREASE, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnAnimationDecreasePlaybackSpeed));
-    speed->Append(ID_ANIMATION_SPEED_NORMAL, wxT("&Normal"));
-    Connect(ID_ANIMATION_SPEED_NORMAL, wxEVT_COMMAND_MENU_SELECTED,
-        wxCommandEventHandler(MainWindow::OnAnimationNormalPlaybackSpeed));
-    // Append Playback Speed submenu to actions menu
-    animation->AppendSubMenu(speed, wxT("&Playback Speed"));
-    // Create Keyframes submenu
-    wxMenu* keyframes = new wxMenu();
-    keyframes->Append(ID_ANIMATION_KEYFRAMES_FIRST, wxT("&First KeyFrame"));
-    keyframes->Append(ID_ANIMATION_KEYFRAMES_LAST, wxT("&Last KeyFrame"));
-    keyframes->Append(ID_ANIMATION_KEYFRAMES_NEXT, wxT("&Next KeyFrame"));
-    keyframes->Append(ID_ANIMATION_KEYFRAMES_PREV, wxT("&Previous KeyFrame"));
-    // Append Animation Submenu to actions menu
-    animation->AppendSubMenu(keyframes, wxT("&KeyFrames"));
-    // Append the Animation Menu to the menubar
+    // Create and append Animation Menu
+    wxMenu* animation = CreateAnimationMenu();
     menubar->Append(animation, wxT("A&nimation"));
+
+    // Create and append Rendering Menu
+    wxMenu* rendering = CreateRenderingMenu();
+    menubar->Append(rendering, wxT("&Rendering"));
 
     SetMenuBar(menubar);
 }
@@ -517,6 +453,97 @@ void MainWindow::CreateDrawingPanel()
     m_MainSizer->Layout();
 }
 
+wxMenu* MainWindow::CreateFileMenu()
+{
+    wxMenu* file = new wxMenu();
+    // Create Open menu item and connect it
+    file->Append(wxID_OPEN, wxT("&Open Model"), wxT("Open a new model file"));
+    Connect(wxID_OPEN, wxEVT_COMMAND_MENU_SELECTED, 
+        wxCommandEventHandler(MainWindow::OnOpenFile));
+    // Create Clear All menu item and connect it
+    file->Append(ID_FILE_CLEAR_ALL, wxT("&Clear Scene"), wxT("Clear scene"));
+    Connect(ID_FILE_CLEAR_ALL, wxEVT_COMMAND_MENU_SELECTED, 
+        wxCommandEventHandler(MainWindow::OnClearAll));
+    // Create Exit menu item and connect it
+    file->Append(wxID_EXIT, wxT("&Exit"));
+    Connect(wxID_EXIT, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MainWindow::OnQuit));
+    
+    return file;
+}
+
+wxMenu* MainWindow::CreateActionsMenu()
+{
+    wxMenu* actions = new wxMenu();
+    actions->AppendCheckItem(ID_ACTION_TRANSLATE, wxT("&Translte"));
+    Connect(ID_ACTION_TRANSLATE, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnChangeAction));
+    actions->AppendCheckItem(ID_ACTION_SCALE, wxT("&Scale"));
+    Connect(ID_ACTION_SCALE, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnChangeAction));
+    actions->AppendCheckItem(ID_ACTION_ROTATE, wxT("&Rotate"));
+    Connect(ID_ACTION_ROTATE, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnChangeAction));
+    
+    CreateAxisSubMenu(actions);
+    CreateSpacesSubMenu(actions);
+
+    return actions;
+}
+
+void MainWindow::CreateAxisSubMenu(wxMenu* actionsMenu)
+{
+    // Create Axis submenu
+    wxMenu* axis = new wxMenu();
+    axis->AppendCheckItem(ID_AXIS_X, wxT("X"));
+    Connect(ID_AXIS_X, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnChangeAxis));
+    axis->AppendCheckItem(ID_AXIS_Y, wxT("Y"));
+    Connect(ID_AXIS_Y, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnChangeAxis));
+    axis->AppendCheckItem(ID_AXIS_Z, wxT("Z"));
+    Connect(ID_AXIS_Z, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnChangeAxis));
+    
+    actionsMenu->AppendSeparator();
+    actionsMenu->AppendSubMenu(axis, wxT("&Axis"));
+}
+
+void MainWindow::CreateSpacesSubMenu(wxMenu* actionsMenu)
+{
+    // Create Space submenu
+    wxMenu* space = new wxMenu();
+    space->AppendCheckItem(ID_SPACE_OBJECT, wxT("Object"));
+    Connect(ID_SPACE_OBJECT, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnChangeSpace));
+    space->AppendCheckItem(ID_SPACE_WORLD, wxT("World"));
+    Connect(ID_SPACE_WORLD, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnChangeSpace));
+    space->AppendCheckItem(ID_SPACE_VIEW, wxT("View"));
+    Connect(ID_SPACE_VIEW, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnChangeSpace));
+    
+    actionsMenu->AppendSeparator();
+    actionsMenu->AppendSubMenu(space, wxT("&Space"));
+}
+
+wxMenu* MainWindow::CreateViewMenu()
+{
+    wxMenu* view = new wxMenu();
+    
+    CreateProjectionSubMenu(view);
+
+    view->AppendCheckItem(ID_VIEW_BOUNDING_BOX, wxT("B&ounding Box"));
+    Connect(ID_VIEW_BOUNDING_BOX, wxEVT_COMMAND_MENU_SELECTED, 
+        wxCommandEventHandler(MainWindow::OnBoundingBox));
+    view->AppendCheckItem(ID_VIEW_BACKFACE, wxT("&BackFace Culling"));
+    Connect(ID_VIEW_BACKFACE, wxEVT_COMMAND_MENU_SELECTED, 
+        wxCommandEventHandler(MainWindow::OnBackFaceCulling));
+
+    CreateBackgroundSubMenu(view);
+
+    return view;
+}
+
 void MainWindow::CreateProjectionSubMenu(wxMenu* viewMenu)
 {
     wxMenu* projection = new wxMenu();
@@ -559,4 +586,62 @@ void MainWindow::CreateBackgroundSubMenu(wxMenu* viewMenu)
     background->AppendSubMenu(interpolation, wxT("&Interpolation"));
     // Add background SubMenu to view
     viewMenu->AppendSubMenu(background, wxT("&Background"));
+}
+
+wxMenu* MainWindow::CreateAnimationMenu()
+{
+    wxMenu* animation = new wxMenu();
+    animation->Append(ID_ANIMATION_SETTINGS, wxT("&Settings..."));
+    Connect(ID_ANIMATION_SETTINGS, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationSettings));
+    animation->AppendCheckItem(ID_ANIMATION_RECORD, wxT("&Record"));
+    Connect(ID_ANIMATION_RECORD, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationRecord));
+    animation->AppendSeparator();
+    animation->Append(ID_ANIMATION_START_PLAYING, wxT("Start &Playing"));
+    Connect(ID_ANIMATION_START_PLAYING, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationPlay));
+    // Create Playback Speed submenu
+    CreatePlaybackSpeedSubMenu(animation);
+    // Create Keyframes submenu
+    CreateKeyFramesSubMenu(animation);
+
+    return animation;
+}
+
+void MainWindow::CreatePlaybackSpeedSubMenu(wxMenu* animationMenu)
+{
+    wxMenu* speed = new wxMenu();
+    speed->Append(ID_ANIMATION_SPEED_INCREASE, wxT("&Increase by 25%"));
+    Connect(ID_ANIMATION_SPEED_INCREASE, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationIncreasePlaybackSpeed));
+    speed->Append(ID_ANIMATION_SPEED_DECREASE, wxT("&Decrease by 25%"));
+    Connect(ID_ANIMATION_SPEED_DECREASE, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationDecreasePlaybackSpeed));
+    speed->Append(ID_ANIMATION_SPEED_NORMAL, wxT("&Normal"));
+    Connect(ID_ANIMATION_SPEED_NORMAL, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnAnimationNormalPlaybackSpeed));
+    // Append Playback Speed submenu to actions menu
+    animationMenu->AppendSubMenu(speed, wxT("&Playback Speed"));
+}
+
+void MainWindow::CreateKeyFramesSubMenu(wxMenu* animationMenu)
+{
+    wxMenu* keyframes = new wxMenu();
+    keyframes->Append(ID_ANIMATION_KEYFRAMES_FIRST, wxT("&First KeyFrame"));
+    keyframes->Append(ID_ANIMATION_KEYFRAMES_LAST, wxT("&Last KeyFrame"));
+    keyframes->Append(ID_ANIMATION_KEYFRAMES_NEXT, wxT("&Next KeyFrame"));
+    keyframes->Append(ID_ANIMATION_KEYFRAMES_PREV, wxT("&Previous KeyFrame"));
+    // Append KeyFrames Submenu to animations menu
+    animationMenu->AppendSubMenu(keyframes, wxT("&KeyFrames"));
+}
+
+wxMenu* MainWindow::CreateRenderingMenu()
+{
+    wxMenu* rendering = new wxMenu();
+    rendering->Append(ID_RENDERING_SET_MATERIAL, wxT("&Set Material..."));
+    Connect(ID_RENDERING_SET_MATERIAL, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnRenderingSetMaterial));
+
+    return rendering;
 }

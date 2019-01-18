@@ -114,17 +114,6 @@ void Camera::LookAt(const Vec4& eye, const Vec4& at, const Vec4& up)
     Vec4 upReal = Vec4::Normalize3(Vec4::Cross(forward, right));
     camParams.Up = upReal;
 
-    /*
-    Mat4 rotate;
-    rotate[0] = right;
-    rotate[1] = upReal;
-    rotate[2] = forward;
-
-    Mat4 translate = Mat4::Translate(-eye);
-
-    worldToView = translate * rotate;
-    */
-
     Mat4 transform;
     transform[0] = right;
     transform[1] = upReal;
@@ -144,6 +133,11 @@ const OrthographicParameters& Camera::GetOrthographicParameters() const
 const PerspectiveParameters& Camera::GetPerspectiveParameters() const
 {
     return perspParams;
+}
+
+const CameraParameters& Camera::GetCameraParameters() const
+{
+    return camParams;
 }
 
 bool Camera::IsPerspective() const

@@ -20,15 +20,23 @@ class Scene
 
         Scene(Scene const&) = delete;
         void operator=(Scene const&) = delete;
+    
+        void ClearScene();
 
+        // Models Methods
         bool LoadModelFromFile(const std::string& filename);
-
         std::vector<Model*>& GetModels();
+        Model* GetSelectedModel();
+        void SelectNextModel();
+        void SelectPreviousModel();
+        void ClearModelSelection();
+        void SetMaterial(const Material& material);
+
         Camera* GetCamera();
         Renderer& GetRenderer();
 
         // Camera Methods
-        void FrameCameraOnModel(Model* model);
+        void FrameCameraOnModel(Model* model, bool newModel = true);
 
         // Animation methods
         void StartRecordingAnimation();
@@ -55,10 +63,11 @@ class Scene
             const Mat4& viewTransform, const Mat4& projection);
         bool IsBackFace(Polygon* p, const Mat4& objectToWorld, const Mat4& camTransform,
             const Mat4& viewTransform, const Mat4& projection);
+        void DeleteModels();
 
     private:
         std::vector<Model*> models;
         Camera* camera;
         Renderer renderer;
-        Animation anim;
+        int selectedModelIndex;
 };

@@ -1,20 +1,23 @@
 #include "Scene.h"
 
 Scene::Scene()
+    : selectedModelIndex(-1)
 {
     camera = new Camera();
 }
 
 Scene::~Scene()
 {
+    DeleteModels();
+    delete camera;
+}
+
+void Scene::ClearScene()
+{
+    DeleteModels();
     delete camera;
 
-    while (models.size() > 0)
-    {
-        Model* model = models.back();
-        models.pop_back();
-        delete model;
-    }
+    camera = new Camera();
 }
 
 bool Scene::LoadModelFromFile(const std::string& filename)
@@ -23,6 +26,7 @@ bool Scene::LoadModelFromFile(const std::string& filename)
     Model* model = new Model();
     model->LoadFromFile(filename);
     models.push_back(model);
+    selectedModelIndex = models.size() - 1;
 
     // Frame camera on model
     FrameCameraOnModel(model);
@@ -35,6 +39,44 @@ std::vector<Model*>& Scene::GetModels()
     return models;
 }
 
+Model* Scene::GetSelectedModel()
+{
+    if (selectedModelIndex < 0)
+        return nullptr;
+    
+    return models[selectedModelIndex];
+}
+
+void Scene::SelectNextModel()
+{
+    selectedModelIndex++;
+    if (selectedModelIndex >= (int)models.size()) selectedModelIndex = 0;
+}
+
+void Scene::SelectPreviousModel()
+{
+    selectedModelIndex--;
+    if (selectedModelIndex < 0) selectedModelIndex = models.size() - 1;
+}
+
+void Scene::ClearModelSelection()
+{
+    selectedModelIndex = -1;
+}
+
+void Scene::SetMaterial(const Material& material)
+{
+    if (selectedModelIndex < 0)
+        return;
+    
+    Material* mat = GetSelectedModel()->GetMaterial();
+    mat->Color = material.Color;
+    mat->Ka = material.Ka;
+    mat->Kd = material.Kd;
+    mat->Ks = material.Ks;
+    mat->Specular = material.Specular;
+}
+
 Camera* Scene::GetCamera()
 {
     return camera;
@@ -45,7 +87,7 @@ Renderer& Scene::GetRenderer()
     return renderer;
 }
 
-void Scene::FrameCameraOnModel(Model* model)
+void Scene::FrameCameraOnModel(Model* model, bool newModel)
 {
     Vec4 dimensions = model->GetModelDimensions() * model->GetObjectToWorldTransform();
     Vec4 center = model->GetModelBBoxCenter() * model->GetObjectToWorldTransform();
@@ -60,20 +102,24 @@ void Scene::FrameCameraOnModel(Model* model)
         f = sin(ToRadians(renderer.GetAspectRatio() * camera->GetPerspectiveParameters().FOV / 2.0));
     }
     double zPos = abs(radius / f) * Settings::CameraFrameOffset;
-    Vec4 eye = center - Vec4(0.0, 0.0, -zPos);
-    camera->LookAt(eye, center, Vec4(0.0, -1.0, 0.0));
-    LOG_INFO("Moved camera to: ({0}, {1}, {2})", eye[0], eye[1], eye[2]);
 
-    // Set Orthographic Projection
-    bool isPerspective = camera->IsPerspective();
-	double orthoWidth = (dimensions[0] > dimensions[1]) ? 
-        dimensions[0] : renderer.GetAspectRatio() * dimensions[1];
-    orthoWidth *= Settings::CameraFrameOffset;
-	camera->SetOrthographic(orthoWidth, renderer.GetAspectRatio(), 1.0, 1000.0);
-    LOG_INFO("Set Orthographic Projection Width to: {0}", orthoWidth);
+    if (newModel && (zPos > abs(camera->GetCameraParameters().Eye[2])))
+    {
+        Vec4 eye = center - Vec4(0.0, 0.0, -zPos);
+        camera->LookAt(eye, center, Vec4(0.0, -1.0, 0.0));
+        LOG_INFO("Moved camera to: ({0}, {1}, {2})", eye[0], eye[1], eye[2]);
 
-    // Switch camera to the correct projection (the one that is selected)
-    camera->SwitchToProjection(isPerspective);
+        // Set Orthographic Projection
+        bool isPerspective = camera->IsPerspective();
+        double orthoWidth = (dimensions[0] > dimensions[1]) ? 
+            dimensions[0] : renderer.GetAspectRatio() * dimensions[1];
+        orthoWidth *= Settings::CameraFrameOffset;
+        camera->SetOrthographic(orthoWidth, renderer.GetAspectRatio(), 1.0, 1000.0);
+        LOG_INFO("Set Orthographic Projection Width to: {0}", orthoWidth);
+
+        // Switch camera to the correct projection (the one that is selected)
+        camera->SwitchToProjection(isPerspective);
+    }
 }
 
 void Scene::Resized(int width, int height)
@@ -120,7 +166,10 @@ void Scene::Draw()
 
     for (Model* model : models)
     {
-        Vec4 colorVec = Vec4(255, 255, 255);
+        Vec4 colorVec = model->GetMaterial()->Color;
+        if (model == GetSelectedModel())
+            colorVec = Vec4(255, 255, 0);
+        
         wxColour color((unsigned int)colorVec[0], (unsigned int)colorVec[1], 
         (unsigned int)colorVec[2]);
 
@@ -129,9 +178,13 @@ void Scene::Draw()
 
         if (Settings::IsPlayingAnimation)
         {
-            const Frame* currentFrame = anim.GetCurrentFrame();
-            objectToWorld = currentFrame->ObjectToWorldTransform;
-            viewTransform = currentFrame->ViewTransform;
+            const Frame* currentFrame = model->GetAnimation()->GetCurrentFrame();
+
+            if (currentFrame != nullptr)
+            {
+                objectToWorld = currentFrame->ObjectToWorldTransform;
+                viewTransform = currentFrame->ViewTransform;
+            }
         }
 
         DrawModel(model, objectToWorld, camTransform, viewTransform, projection, color);
@@ -257,13 +310,15 @@ bool Scene::IsBackFace(Polygon* p, const Mat4& objectToWorld, const Mat4& camTra
             return true;
         return false;
     }
-        normal = Vec4::Normalize3(normal * projection);
-	    return normal[2] < 0;
+    
+    normal = Vec4::Normalize3(normal * projection);
+	return normal[2] < 0;
 }
 
 void Scene::StartRecordingAnimation()
 {
-    anim.ClearAnimation();
+    for (Model* model : models)
+        model->GetAnimation()->ClearAnimation();
 }
 
 void Scene::AddKeyFrame(double timeDiff, const Vec4& offsets)
@@ -272,8 +327,8 @@ void Scene::AddKeyFrame(double timeDiff, const Vec4& offsets)
         return;
 
     Frame* frame = new Frame();
-    frame->ObjectToWorldTransform = models.back()->GetObjectToWorldTransform();
-    frame->ViewTransform = models.back()->GetViewTransform();
+    frame->ObjectToWorldTransform = GetSelectedModel()->GetObjectToWorldTransform();
+    frame->ViewTransform = GetSelectedModel()->GetViewTransform();
     frame->Action[0] = (Settings::SelectedAction == ID_ACTION_TRANSLATE);
     frame->Action[1] = (Settings::SelectedAction == ID_ACTION_SCALE);
     frame->Action[2] = (Settings::SelectedAction == ID_ACTION_ROTATE);
@@ -296,47 +351,73 @@ void Scene::AddKeyFrame(double timeDiff, const Vec4& offsets)
             frame->Rotation[i] = (Settings::SelectedAxis[i]) ? offsets[2] : 0.0;
     }
 
-    if (anim.GetFrame(0) == NULL)
+    Animation* anim = GetSelectedModel()->GetAnimation();
+    if (anim->GetFrame(0) == NULL)
         frame->FrameNum = 0;
     else
-        frame->FrameNum = anim.GetLastFrameNumber() + 
+        frame->FrameNum = anim->GetLastFrameNumber() + 
             (int)(timeDiff * (double)Settings::FramesPerSeconds);
     frame->OriginalFrame = frame->FrameNum;
     
     LOG_TRACE("Scene::AddKeyFrame: Added KeyFrame at frame: {0}", frame->FrameNum);
-    anim.AddKeyFrame(frame);
+    anim->AddKeyFrame(frame);
 }
 
 bool Scene::PlayAnimation()
 {
-    if ((models.size() == 0) || anim.GetLastFrameNumber() < 0)
+    if (models.size() == 0)
         return false;
 
-    const Frame* frame = anim.GetCurrentFrame();
-    if ((frame == NULL) || (frame->FrameNum == anim.GetLastFrameNumber()))
+    bool isSomeonePlaying = false;
+    for (Model* model : models)
+    {
+        Animation* anim = model->GetAnimation();
+        const Frame* frame = anim->GetCurrentFrame();
+        isSomeonePlaying = ((frame != nullptr) && (frame->FrameNum < anim->GetLastFrameNumber())) || isSomeonePlaying;
+    }
+
+    //if ((frame == NULL) || (frame->FrameNum == anim.GetLastFrameNumber()))
+    if (!isSomeonePlaying)
     {
         // Animation ended
-        anim.ResetAnimation();
+        for (Model* model : models)
+            model->GetAnimation()->ResetAnimation();
+        
         Settings::IsPlayingAnimation = false;
         LOG_TRACE("Scene::PlayAnimation: Finished Playing Animation.");
         return false;
     }
     
-    anim.StepToNextFrame();
+    for (Model* model : models)
+        model->GetAnimation()->StepToNextFrame();
+    
     return true;
 }
 
 void Scene::IncreasePlaybackSpeed(double percentage)
 {
-    anim.IncreasePlaybackSpeed(percentage);
+    for (Model* model : models)
+        model->GetAnimation()->IncreasePlaybackSpeed(percentage);
 }
 
 void Scene::DecreasePlaybackSpeed(double percentage)
 {
-    anim.DecreasePlaybackSpeed(percentage);
+    for (Model* model : models)
+        model->GetAnimation()->DecreasePlaybackSpeed(percentage);
 }
 
 void Scene::NormalPlaybackSpeed()
 {
-    anim.NormalPlaybackSpeed();
+    for (Model* model : models)
+        model->GetAnimation()->NormalPlaybackSpeed();
+}
+
+void Scene::DeleteModels()
+{
+    while (models.size() > 0)
+    {
+        Model* model = models.back();
+        models.pop_back();
+        delete model;
+    }
 }

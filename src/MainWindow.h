@@ -8,10 +8,13 @@ class MainWindow : public wxFrame
 public:
     MainWindow(const wxString& title);
 
-    void OnQuit(wxCommandEvent& event);
-    void OnOpenFile(wxCommandEvent& event);
     void OnDrawingPanelPaint(wxPaintEvent& event);
     void OnUpdateUI(wxUpdateUIEvent& event);
+
+    // File options events
+    void OnOpenFile(wxCommandEvent& event);
+    void OnClearAll(wxCommandEvent& event);
+    void OnQuit(wxCommandEvent& event);
 
     // View options events
     void OnSwitchProjection(wxCommandEvent& event);
@@ -58,13 +61,29 @@ public:
     void OnAnimationDecreasePlaybackSpeed(wxCommandEvent& event);
     void OnAnimationNormalPlaybackSpeed(wxCommandEvent& event);
 
+    // Rendering menu events
+    void OnRenderingSetMaterial(wxCommandEvent& event);
+
 private:
     void CreateMenuBar();
     void CreateToolBar();
     void CreateDrawingPanel();
 
+    wxMenu* CreateFileMenu();
+
+    wxMenu* CreateActionsMenu();
+    void CreateAxisSubMenu(wxMenu* actionsMenu);
+    void CreateSpacesSubMenu(wxMenu* actionsMenu);
+
+    wxMenu* CreateViewMenu();
     void CreateProjectionSubMenu(wxMenu* viewMenu);
     void CreateBackgroundSubMenu(wxMenu* viewMenu);
+
+    wxMenu* CreateAnimationMenu();
+    void CreatePlaybackSpeedSubMenu(wxMenu* animationMenu);
+    void CreateKeyFramesSubMenu(wxMenu* animationMenu);
+
+    wxMenu* CreateRenderingMenu();
 
 private:
     wxBoxSizer* m_MainSizer;

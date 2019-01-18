@@ -59,6 +59,7 @@ public:
 
     const OrthographicParameters& GetOrthographicParameters() const;
     const PerspectiveParameters& GetPerspectiveParameters() const;
+    const CameraParameters& GetCameraParameters() const;
 
     bool IsPerspective() const;
     void SwitchToProjection(bool perspective);

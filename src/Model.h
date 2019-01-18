@@ -2,6 +2,8 @@
 
 #include "pch.h"
 #include "Geometry.h"
+#include "Material.h"
+#include "Animation.h"
 
 class Model
 {
@@ -22,6 +24,9 @@ public:
 
     Vec4 GetModelDimensions() const;
     Vec4 GetModelBBoxCenter() const;
+
+    Animation* GetAnimation();
+    Material* GetMaterial();
 
 private:
     Vec4 CalculatePolyNormal(Polygon* p) const;
@@ -44,6 +49,8 @@ private:
     std::vector<Geometry*> geos;
     Mat4 objectToWorld;
     Mat4 viewTransform;
+    Animation* anim;
+    Material* material;
 
     Vec4 minDimensions;
     Vec4 maxDimensions;

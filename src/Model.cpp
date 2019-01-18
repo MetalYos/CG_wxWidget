@@ -5,6 +5,7 @@
 #include <exception>
 
 Model::Model()
+    : anim(new Animation()), material(new Material())
 {
     VertexPositions.reserve(10);
     VertexNormals.reserve(10);
@@ -31,6 +32,9 @@ Model::~Model()
         geos.pop_back();
         delete geo;
     }
+
+    delete anim;
+    delete material;
 }
 
 void Model::LoadFromFile(const std::string& filename)
@@ -243,6 +247,16 @@ Vec4 Model::GetModelBBoxCenter() const
         result[i] = minDimensions[i] + modelDimensions[i] / 2.0;
     
     return result;
+}
+
+Animation* Model::GetAnimation()
+{
+    return anim;
+}
+
+Material* Model::GetMaterial()
+{
+    return material;
 }
 
 Vec4 Model::CalculatePolyNormal(Polygon* p) const

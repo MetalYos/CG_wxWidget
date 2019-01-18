@@ -1,4 +1,4 @@
-1. Add a way to change model's color.
+0. Check Animation works for multiple models.
+1. Add Z-Buffer (for wireframe also).
 2. Add Scan Convert to fill polygons with color.
-3. Add Z-Buffer (for wireframe also).
-4. Add BuCubic interpolation to background images.
+3. Add BiCubic interpolation to background images.

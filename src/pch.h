@@ -13,6 +13,7 @@
 // wxWidgets
 #include <wx-3.1/wx/wx.h>
 #include <wx-3.1/wx/dcbuffer.h>
+#include <wx/colordlg.h>
 
 // Log
 #include "Log.h"
