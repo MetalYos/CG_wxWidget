@@ -1,4 +1,5 @@
 0. Check Animation works for multiple models.
-1. Add Z-Buffer (for wireframe also).
-2. Add Scan Convert to fill polygons with color.
-3. Add BiCubic interpolation to background images.
+1. Add ability to select objects using the mouse.
+2. Add ability to move the camera (orbit, pan and zoom).
+3. Add Lighting (Flat Goroud and Phong).
+4. Add BiCubic interpolation to background images.

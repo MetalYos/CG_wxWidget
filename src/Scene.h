@@ -53,10 +53,6 @@ class Scene
         Scene();
 
         void DrawBackground();
-        void DrawEdge(const Vec4& p0, const Vec4& p1, const Mat4& objectToWorld, const Mat4& camTransform,
-            const Mat4& viewTransform, const Mat4& projection, const wxColour& color, int thickness = 0);
-        void DrawPolygon(Polygon* poly, Model* model, const Mat4& objectToWorld, 
-            const Mat4& camTransform, const Mat4& viewTransform, const Mat4& projection, const wxColour& color);
         void DrawModel(Model* model, const Mat4& objectToWorld, const Mat4& camTransform, 
             const Mat4& viewTransform, const Mat4& projection, const wxColour& color);
         void DrawOrigin(const Vec4& origin, const Mat4& objectToWorld, const Mat4& camTransform, 

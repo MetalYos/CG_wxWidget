@@ -9,6 +9,8 @@
 #include <memory>
 #include <string>
 #include <ctime>
+#include <limits>
+#include <algorithm>
 
 // wxWidgets
 #include <wx-3.1/wx/wx.h>
