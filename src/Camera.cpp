@@ -113,16 +113,64 @@ void Camera::LookAt(const Vec4& eye, const Vec4& at, const Vec4& up)
     // Calculate real Up normal vector
     Vec4 upReal = Vec4::Normalize3(Vec4::Cross(forward, right));
     camParams.Up = upReal;
+    camParams.WorldUp = up;
 
     Mat4 transform;
     transform[0] = right;
     transform[1] = upReal;
     transform[2] = forward;
-    transform[3][0] = -Vec4::Dot3(right, eye);
-    transform[3][1] = -Vec4::Dot3(upReal, eye);
-    transform[3][2] = -Vec4::Dot3(forward, eye);
+    transform[3] = -eye;
+    transform[3][3] = 1.0;
 
     worldToView = transform;
+}
+
+void Camera::RotateCamera(double yawOffset, double pitchOffset)
+{
+    camParams.Yaw += yawOffset;
+    camParams.Pitch += pitchOffset;
+
+    if (camParams.Pitch > 89.0)
+        camParams.Pitch = 89.0f;
+    if (camParams.Pitch < -89.0)
+        camParams.Pitch = -89.0;
+
+    Vec4 forward;
+    forward[0] = cos(ToRadians(camParams.Yaw)) * cos(ToRadians(camParams.Pitch));
+    forward[1] = sin(ToRadians(camParams.Pitch));
+    forward[2] = sin(ToRadians(camParams.Yaw)) * cos(ToRadians(camParams.Pitch));
+    LookAt(camParams.Eye, forward + camParams.Eye, camParams.WorldUp);
+}
+
+void Camera::ZoomCamera(double zoomOffset)
+{
+    double fov = perspParams.FOV;
+    fov += zoomOffset;
+    if (fov <= 1.0) fov = 1.0;
+    if (fov >= 90.0) fov = 90.0;
+
+    if (isPerspective)
+        SetPerspective(fov, perspParams.AspectRatio, perspParams.Near, perspParams.Far);
+    else
+    {
+        projection = Mat4::Scale(1.0 - zoomOffset / Settings::MouseSensitivity[1]) * 
+            projection;
+    }
+}
+
+void Camera::PanCamera(double xOffset, double yOffset)
+{
+    Vec4 eye = camParams.Eye;
+    Vec4 forward = camParams.Forward;
+
+    eye[0] -= xOffset;
+    eye[1] -= yOffset;
+    eye[3] = 1.0;
+
+    Vec4 at = eye - forward;
+    at[3] = 1.0;
+
+    LookAt(eye, at, camParams.Up);
 }
 
 const OrthographicParameters& Camera::GetOrthographicParameters() const

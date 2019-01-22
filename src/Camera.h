@@ -40,6 +40,13 @@ struct CameraParameters
     Vec4 Forward;
     Vec4 Right;
     Vec4 Up;
+    Vec4 WorldUp;
+
+    double Yaw;
+    double Pitch;
+
+    CameraParameters()
+        : Yaw(-90.0), Pitch(0.0) {}
 };
 
 class Camera
@@ -56,6 +63,10 @@ public:
         double near, double far);
     void SetPerspective(double fov, double aspectRatio, double near, double far);
     void LookAt(const Vec4& eye, const Vec4& at, const Vec4& up);
+
+    void RotateCamera(double yawOffset, double pitchOffset);
+    void ZoomCamera(double zoomOffset);
+    void PanCamera(double xOffset, double yOffset);
 
     const OrthographicParameters& GetOrthographicParameters() const;
     const PerspectiveParameters& GetPerspectiveParameters() const;

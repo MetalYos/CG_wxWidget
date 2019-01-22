@@ -102,7 +102,7 @@ void Scene::FrameCameraOnModel(Model* model, bool newModel)
         f = sin(ToRadians(renderer.GetAspectRatio() * camera->GetPerspectiveParameters().FOV / 2.0));
     }
     double zPos = abs(radius / f) * Settings::CameraFrameOffset;
-
+    zPos *= 1.2;
     if (newModel && (zPos > abs(camera->GetCameraParameters().Eye[2])))
     {
         Vec4 eye = center - Vec4(0.0, 0.0, -zPos);
@@ -120,6 +120,8 @@ void Scene::FrameCameraOnModel(Model* model, bool newModel)
         // Switch camera to the correct projection (the one that is selected)
         camera->SwitchToProjection(isPerspective);
     }
+
+    originalCamParams = camera->GetCameraParameters();
 }
 
 void Scene::Resized(int width, int height)
@@ -207,8 +209,8 @@ void Scene::DrawModel(Model* model, const Mat4& objectToWorld, const Mat4& camTr
                 IsBackFace(poly, objectToWorld, camTransform, viewTransform, projection))
                 continue;
             
-            //renderer.DrawPolygon(poly, model, objectToWorld, camTransform, viewTransform, projection, color);
-            renderer.FillPolygon(model, poly, camTransform, projection, model->GetMaterial()->Color);
+            renderer.DrawPolygon(poly, model, objectToWorld, camTransform, viewTransform, projection, color);
+            //renderer.FillPolygon(model, poly, camTransform, projection, model->GetMaterial()->Color);
         }
 
         if (Settings::IsBoundingBoxOn && Settings::IsBoundingBoxGeo)

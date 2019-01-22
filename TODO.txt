@@ -1,3 +1,4 @@
+0. Fix z axis between Ortho and Persp projections.
 0. Check Animation works for multiple models.
 1. Add ability to select objects using the mouse.
 2. Add ability to move the camera (orbit, pan and zoom).

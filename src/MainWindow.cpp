@@ -310,7 +310,6 @@ void MainWindow::OnAnimationPlay(wxCommandEvent& event)
     do
     {
         clock_t before = clock();
-        // m_DrawingPanel->Refresh();
         INVALIDATE();
         clock_t diff = clock() - before;
 

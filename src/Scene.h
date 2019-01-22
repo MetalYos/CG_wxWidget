@@ -66,4 +66,6 @@ class Scene
         Camera* camera;
         Renderer renderer;
         int selectedModelIndex;
+
+        CameraParameters originalCamParams;
 };
