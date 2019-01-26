@@ -31,6 +31,7 @@ class Scene
         void SelectPreviousModel();
         void ClearModelSelection();
         void SetMaterial(const Material& material);
+        void SelectModel(const Vec4& mousePos, bool useBBox = false);
 
         Camera* GetCamera();
         Renderer& GetRenderer();
@@ -60,6 +61,8 @@ class Scene
         bool IsBackFace(Polygon* p, const Mat4& objectToWorld, const Mat4& camTransform,
             const Mat4& viewTransform, const Mat4& projection);
         void DeleteModels();
+        void selectModelPoly(const Vec4& mousePos);
+        void selectModelBBox(const Vec4& mousePos);
 
     private:
         std::vector<Model*> models;

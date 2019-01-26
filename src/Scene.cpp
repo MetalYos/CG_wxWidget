@@ -77,6 +77,232 @@ void Scene::SetMaterial(const Material& material)
     mat->Specular = material.Specular;
 }
 
+void Scene::SelectModel(const Vec4& mousePos, bool useBBox)
+{
+    if (useBBox)
+        selectModelBBox(mousePos);
+    else
+        selectModelPoly(mousePos);
+}
+
+void Scene::selectModelPoly(const Vec4& mousePos)
+{
+    if (models.size() == 0)
+        return;
+
+    bool isPerspective = camera->IsPerspective();
+    // Convert mouse position from screen space to view space
+    Vec4 mousePosView = mousePos * renderer.GetToScreenInverseMatrix();
+    mousePosView[2] = -1.0;
+    mousePosView = mousePosView * camera->GetInverseProjection();
+    mousePosView[2] = -1.0;
+    if (isPerspective)
+    {
+        mousePosView[0] = -mousePosView[0];
+        mousePosView[2] = 1.0;
+    }
+    
+    Vec4 lineDirection = Vec4::Normalize3(mousePosView);
+    if (!isPerspective) lineDirection = Vec4(0.0, 0.0, 1.0);
+    LOG_TRACE("Scene::SelectModel: lineDirection (x, y, z): ({0}, {1}, {2}).",
+                lineDirection[0], lineDirection[1], lineDirection[2]);
+
+    const Mat4& worldToView = camera->GetWorldToViewTransform();
+
+    std::vector<unsigned int> indexes;
+    for (unsigned int m = 0; m < models.size(); m++)
+    {
+        bool addedModel = false;
+        Model* model = models[m];
+        const Mat4& objToWorld = model->GetObjectToWorldTransform();
+        const Mat4& viewTransform = model->GetViewTransform();
+
+        for (Geometry* geo : model->GetGeometries())
+        {
+            for (Polygon* poly : geo->Polygons)
+            {
+                Vec4 normal = poly->Normal * objToWorld * worldToView * viewTransform;
+                normal = Vec4::Normalize3(normal);
+                Vec4 center = poly->Center * objToWorld * worldToView * viewTransform;
+
+                if (abs(Vec4::Dot3(normal, lineDirection)) <= AL_DBL_EPSILON)
+                    continue;
+
+                Vec4 linePos = Vec4(0.0, 0.0, 0.0);
+                if (!isPerspective) linePos = mousePosView;
+                double up = Vec4::Dot3(normal, center) - Vec4::Dot3(normal, linePos);
+                double down = Vec4::Dot3(normal, lineDirection);
+                double t = up / down;
+                if (t <= 0)
+                    continue;
+                
+                Vec4 intersectionPoint = lineDirection * t + linePos;
+
+                std::vector<double> point;
+                point.push_back(intersectionPoint[0]);
+                point.push_back(intersectionPoint[1]);
+
+                std::vector<Vec4Line> polyTemp;
+                for (unsigned int i = 0; i < poly->Vertices.size(); i++)
+                {
+                    // Get vertices positions in object space
+                    Vec4 pos1 = model->VertexPositions[poly->Vertices[i]->PositionID];
+                    Vec4 pos2 = model->VertexPositions[poly->Vertices[(i + 1) % poly->Vertices.size()]->PositionID];
+
+                    // Transform to View space
+                    pos1 = pos1 * objToWorld * worldToView * viewTransform;
+                    pos2 = pos2 * objToWorld * worldToView * viewTransform;
+
+                    Vec4Line edge(pos1, pos2);
+                    polyTemp.push_back(edge);
+                }
+
+                if (PointPolyIntersection(point, polyTemp))
+                {
+                    indexes.push_back(m);
+                    addedModel = true;
+                    break;
+                }
+            }
+
+            if (addedModel)
+            break;
+        }
+    }
+    LOG_TRACE("Scene::SelectModel: indexes.size(): {0}.", indexes.size());
+
+    if (indexes.size() == 0)
+    {
+        ClearModelSelection();
+        return;
+    }
+
+    int minIndex = indexes[0];
+    for (unsigned int i = 1; i < indexes.size(); i++)
+    {
+        Vec4 center = models[indexes[i]]->GetModelBBoxCenter() * 
+            models[indexes[i]]->GetObjectToWorldTransform() * worldToView * 
+                models[indexes[i]]->GetViewTransform();
+
+        Vec4 minCenter = models[indexes[minIndex]]->GetModelBBoxCenter() * 
+            models[indexes[minIndex]]->GetObjectToWorldTransform() * worldToView * 
+                models[indexes[minIndex]]->GetViewTransform();
+
+        LOG_TRACE("Scene::SelectModel: center length: {0}", Vec4::Length3(center));
+        LOG_TRACE("Scene::SelectModel: minCenter length: {0}", Vec4::Length3(minCenter));
+        if (Vec4::Length3(center) < Vec4::Length3(minCenter))
+            minIndex = indexes[i];
+    }
+
+    selectedModelIndex = minIndex;
+}
+
+void Scene::selectModelBBox(const Vec4& mousePos)
+{
+    if (models.size() == 0)
+        return;
+
+    bool isPerspective = camera->IsPerspective();
+    // Convert mouse position from screen space to view space
+    Vec4 mousePosView = mousePos * renderer.GetToScreenInverseMatrix();
+    mousePosView[2] = -1.0;
+    mousePosView = mousePosView * camera->GetInverseProjection();
+    mousePosView[2] = -1.0;
+    if (isPerspective)
+    {
+        mousePosView[0] = -mousePosView[0];
+        mousePosView[2] = 1.0;
+    }
+    
+    Vec4 lineDirection = Vec4::Normalize3(mousePosView);
+    if (!isPerspective) lineDirection = Vec4(0.0, 0.0, 1.0);
+    LOG_TRACE("Scene::SelectModel: lineDirection (x, y, z): ({0}, {1}, {2}).",
+                lineDirection[0], lineDirection[1], lineDirection[2]);
+
+    const Mat4& worldToView = camera->GetWorldToViewTransform();
+
+    std::vector<unsigned int> indexes;
+    for (unsigned int m = 0; m < models.size(); m++)
+    {
+        Model* model = models[m];
+        const Mat4& objToWorld = model->GetObjectToWorldTransform();
+        const Mat4& viewTransform = model->GetViewTransform();
+
+        for (Polygon* poly : model->BoundingBoxPolygons)
+        {
+            Vec4 normal = poly->Normal * objToWorld * worldToView * viewTransform;
+            normal = Vec4::Normalize3(normal);
+            Vec4 center = poly->Center * objToWorld * worldToView * viewTransform;
+
+            if (abs(Vec4::Dot3(normal, lineDirection)) <= AL_DBL_EPSILON)
+                continue;
+
+            Vec4 linePos = Vec4(0.0, 0.0, 0.0);
+            if (!isPerspective) linePos = mousePosView;
+            double up = Vec4::Dot3(normal, center) - Vec4::Dot3(normal, linePos);
+            double down = Vec4::Dot3(normal, lineDirection);
+            double t = up / down;
+            if (t <= 0)
+                continue;
+            
+            Vec4 intersectionPoint = lineDirection * t + linePos;
+            LOG_TRACE("Scene::SelectModel: intersectionPoint (x, y, z): ({0}, {1}, {2}).",
+                intersectionPoint[0], intersectionPoint[1], intersectionPoint[2]);
+
+            std::vector<double> point;
+            point.push_back(intersectionPoint[0]);
+            point.push_back(intersectionPoint[1]);
+
+            std::vector<Vec4Line> polyTemp;
+            for (unsigned int i = 0; i < poly->Vertices.size(); i++)
+            {
+                // Get vertices positions in object space
+                Vec4 pos1 = model->VertexPositions[poly->Vertices[i]->PositionID];
+                Vec4 pos2 = model->VertexPositions[poly->Vertices[(i + 1) % poly->Vertices.size()]->PositionID];
+
+                // Transform to View space
+                pos1 = pos1 * objToWorld * worldToView * viewTransform;
+                pos2 = pos2 * objToWorld * worldToView * viewTransform;
+
+                Vec4Line edge(pos1, pos2);
+                polyTemp.push_back(edge);
+            }
+
+            if (PointPolyIntersection(point, polyTemp))
+            {
+                indexes.push_back(m);
+                break;
+            }
+        }
+    }
+    LOG_TRACE("Scene::SelectModel: indexes.size(): {0}.", indexes.size());
+
+    if (indexes.size() == 0)
+    {
+        ClearModelSelection();
+        return;
+    }
+
+    int minIndex = indexes[0];
+    for (unsigned int i = 1; i < indexes.size(); i++)
+    {
+        Vec4 center = models[indexes[i]]->GetModelBBoxCenter() * 
+            models[indexes[i]]->GetObjectToWorldTransform() * worldToView * 
+                models[indexes[i]]->GetViewTransform();
+
+        Vec4 minCenter = models[indexes[minIndex]]->GetModelBBoxCenter() * 
+            models[indexes[minIndex]]->GetObjectToWorldTransform() * worldToView * 
+                models[indexes[minIndex]]->GetViewTransform();
+
+        LOG_TRACE("Scene::SelectModel: center length: {0}", Vec4::Length3(center));
+        LOG_TRACE("Scene::SelectModel: minCenter length: {0}", Vec4::Length3(minCenter));
+        if (Vec4::Length3(center) < Vec4::Length3(minCenter))
+            minIndex = indexes[i];
+    }
+
+    selectedModelIndex = minIndex;
+}
+
 Camera* Scene::GetCamera()
 {
     return camera;
@@ -105,8 +331,8 @@ void Scene::FrameCameraOnModel(Model* model, bool newModel)
     zPos *= 1.2;
     if (newModel && (zPos > abs(camera->GetCameraParameters().Eye[2])))
     {
-        Vec4 eye = center - Vec4(0.0, 0.0, -zPos);
-        camera->LookAt(eye, center, Vec4(0.0, -1.0, 0.0));
+        Vec4 eye = center - Vec4(0.0, 0.0, zPos);
+        camera->LookAt(eye, center, Vec4(0.0, 1.0, 0.0));
         LOG_INFO("Moved camera to: ({0}, {1}, {2})", eye[0], eye[1], eye[2]);
 
         // Set Orthographic Projection

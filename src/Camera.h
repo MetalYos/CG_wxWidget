@@ -56,6 +56,7 @@ public:
     ~Camera() {}
 
     const Mat4& GetProjection() const;
+    const Mat4& GetInverseProjection() const;
     void SetOrthographic(double left, double right, double top, double bottom,
         double near, double far);
     void SetOrthographic(double width, double aspectRatio, double near, double far);
@@ -78,9 +79,16 @@ public:
     const Mat4& GetWorldToViewTransform() const;
 
 private:
-    Mat4 projection;
+    void buildInversePerspective(double left, double right, double top, double bottom,
+        double near, double far);
+    void buildInverseOrthographic(double left, double right, double top, double bottom,
+        double near, double far);
+
+private:
     Mat4 orthoProjection;
+    Mat4 orthoInverseProjection;
     Mat4 perspProjection;
+    Mat4 perspInverseProjection;
     bool isPerspective;
 
     Mat4 worldToView;

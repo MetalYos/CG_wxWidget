@@ -52,6 +52,12 @@ void DrawPanel::OnMouseLeftClick(wxMouseEvent& event)
         m_Offsets = Vec4(0.0, 1.0, 0.0);
     }
 
+    if (Settings::SelectedAction == ID_ACTION_SELECT)
+    {
+        SCENE.SelectModel(Vec4(m_MouseClickPos.x, m_MouseClickPos.y, 0.0, 1.0));
+        INVALIDATE();
+    }
+
     event.Skip();
 }
 
@@ -72,7 +78,8 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
     currentMousePos.y = currentMousePos.y - this->GetScreenPosition().y;
 
     // Calculate delta in x mouse movement from previous press
-    int dx = m_MousePrevPos.x - currentMousePos.x;
+    int dx = currentMousePos.x - m_MousePrevPos.x;
+    int dy = currentMousePos.y - m_MousePrevPos.y;
 
     // Calculate delta in x and y mouse movements for camera
     int dxCam = currentMousePos.x - m_MouseMiddlePrevPos.x;
@@ -88,18 +95,17 @@ void DrawPanel::OnMouseMove(wxMouseEvent& event)
         {
             double offset = dx / Settings::MouseSensitivity[0];
             m_Offsets[0] += offset;
-            if (Settings::SelectedAxis[0])
-            {
-                SCENE.GetSelectedModel()->Translate(Mat4::Translate(offset, 0.0, 0.0), Settings::SelectedSpace);
-            }
-            if (Settings::SelectedAxis[1])
-            {
-                SCENE.GetSelectedModel()->Translate(Mat4::Translate(0.0, offset, 0.0), Settings::SelectedSpace);
-            }
+
+            Vec4 offsets;
+            if (Settings::SelectedAxis[0]) offsets[0] = dx / Settings::MouseSensitivity[0];
+            if (Settings::SelectedAxis[1]) offsets[1] = -dy / Settings::MouseSensitivity[0];
             if (Settings::SelectedAxis[2])
             {
-                SCENE.GetSelectedModel()->Translate(Mat4::Translate(0.0, 0.0, offset), Settings::SelectedSpace);
+                if (Settings::SelectedAxis[0]) offsets[2] = -dy / Settings::MouseSensitivity[0];
+                else offsets[2] = dx / Settings::MouseSensitivity[0];
             }
+
+            SCENE.GetSelectedModel()->Translate(Mat4::Translate(offsets), Settings::SelectedSpace);
         }
         else if (Settings::SelectedAction == ID_ACTION_SCALE)
         {

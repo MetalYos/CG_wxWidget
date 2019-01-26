@@ -245,6 +245,7 @@ Vec4 Model::GetModelBBoxCenter() const
 
     for (int i = 0; i < 3; i++)
         result[i] = minDimensions[i] + modelDimensions[i] / 2.0;
+    result[3] = 1.0;
     
     return result;
 }
@@ -434,8 +435,9 @@ std::vector<Polygon*> Model::BuildBoundingBox(const Vec4& minDimensions, const V
     front->Vertices.push_back(new Vertex(start + 2));
     front->Vertices.push_back(new Vertex(start + 3));
     front->Normal = Vec4(0.0, 0.0, 1.0);
-    front->Center = Vec4((maxDimensions[0] - minDimensions[0]) / 2.0,
-        (maxDimensions[1] - minDimensions[1]) / 2.0, maxDimensions[2]);
+    front->Center = Vec4(minDimensions[0] + ((maxDimensions[0] - minDimensions[0]) / 2.0),
+        minDimensions[1] + ((maxDimensions[1] - minDimensions[1]) / 2.0), 
+        maxDimensions[2]);
 
     // Back face Polygon
     Polygon* back = new Polygon();
@@ -444,8 +446,9 @@ std::vector<Polygon*> Model::BuildBoundingBox(const Vec4& minDimensions, const V
     back->Vertices.push_back(new Vertex(start + 6));
     back->Vertices.push_back(new Vertex(start + 7));
     back->Normal = Vec4(0.0, 0.0, -1.0);
-    back->Center = Vec4((maxDimensions[0] - minDimensions[0]) / 2.0,
-        (maxDimensions[1] - minDimensions[1]) / 2.0, minDimensions[2]);
+    back->Center = Vec4(minDimensions[0] + ((maxDimensions[0] - minDimensions[0]) / 2.0),
+        minDimensions[1] + ((maxDimensions[1] - minDimensions[1]) / 2.0), 
+        minDimensions[2]);
 
     // Left face Polygon
     Polygon* left = new Polygon();
@@ -454,8 +457,9 @@ std::vector<Polygon*> Model::BuildBoundingBox(const Vec4& minDimensions, const V
     left->Vertices.push_back(new Vertex(start + 1));
     left->Vertices.push_back(new Vertex(start));
     left->Normal = Vec4(-1.0, 0.0, 0.0);
-    left->Center = Vec4(minDimensions[0], (maxDimensions[1] - minDimensions[1]) / 2.0, 
-        (maxDimensions[2] - minDimensions[2]) / 2.0);
+    left->Center = Vec4(minDimensions[0], 
+        minDimensions[1] + ((maxDimensions[1] - minDimensions[1]) / 2.0), 
+        minDimensions[2] + ((maxDimensions[2] - minDimensions[2]) / 2.0));
 
     // Right face Polygon
     Polygon* right = new Polygon();
@@ -464,8 +468,9 @@ std::vector<Polygon*> Model::BuildBoundingBox(const Vec4& minDimensions, const V
     right->Vertices.push_back(new Vertex(start + 2));
     right->Vertices.push_back(new Vertex(start + 3));
     right->Normal = Vec4(1.0, 0.0, 0.0);
-    right->Center = Vec4(maxDimensions[0], (maxDimensions[1] - minDimensions[1]) / 2.0, 
-        (maxDimensions[2] - minDimensions[2]) / 2.0);
+    right->Center = Vec4(maxDimensions[0], 
+        minDimensions[1] + ((maxDimensions[1] - minDimensions[1]) / 2.0), 
+        minDimensions[2] + ((maxDimensions[2] - minDimensions[2]) / 2.0));
 
     // Top face Polygon
     Polygon* top = new Polygon();
@@ -474,8 +479,9 @@ std::vector<Polygon*> Model::BuildBoundingBox(const Vec4& minDimensions, const V
     top->Vertices.push_back(new Vertex(start + 6));
     top->Vertices.push_back(new Vertex(start + 2));
     top->Normal = Vec4(0.0, 1.0, 0.0);
-    top->Center = Vec4((maxDimensions[0] - minDimensions[0]) / 2.0, maxDimensions[1], 
-        (maxDimensions[2] - minDimensions[2]) / 2.0);
+    top->Center = Vec4(minDimensions[0] + ((maxDimensions[0] - minDimensions[0]) / 2.0), 
+        maxDimensions[1], 
+        minDimensions[2] + ((maxDimensions[2] - minDimensions[2]) / 2.0));
 
     // Bottom face Polygon
     Polygon* bottom = new Polygon();
@@ -484,8 +490,9 @@ std::vector<Polygon*> Model::BuildBoundingBox(const Vec4& minDimensions, const V
     bottom->Vertices.push_back(new Vertex(start + 7));
     bottom->Vertices.push_back(new Vertex(start + 3));
     bottom->Normal = Vec4(0.0, -1.0, 0.0);
-    bottom->Center = Vec4((maxDimensions[0] - minDimensions[0]) / 2.0, minDimensions[1], 
-        (maxDimensions[2] - minDimensions[2]) / 2.0);
+    bottom->Center = Vec4(minDimensions[0] + ((maxDimensions[0] - minDimensions[0]) / 2.0), 
+        minDimensions[1], 
+        minDimensions[2] + ((maxDimensions[2] - minDimensions[2]) / 2.0));
     
     polygons.push_back(front);
     polygons.push_back(back);

@@ -1,6 +1,9 @@
-0. Fix z axis between Ortho and Persp projections.
-0. Check Animation works for multiple models.
-1. Add ability to select objects using the mouse.
-2. Add ability to move the camera (orbit, pan and zoom).
-3. Add Lighting (Flat Goroud and Phong).
-4. Add BiCubic interpolation to background images.
+Maintanence
+------------
+1. Check Animation works for multiple models.
+2. Fix ability to select objects using the mouse in Perspective Projection (not accurate).
+
+New Features
+-------------
+1. Add Lighting (Flat Goroud and Phong).
+2. Add BiCubic interpolation to background images.

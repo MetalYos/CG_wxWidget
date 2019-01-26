@@ -24,6 +24,7 @@ public:
     int GetHeight() const;
     double GetAspectRatio() const;
     const Mat4& GetToScreenMatrix() const;
+    const Mat4& GetToScreenInverseMatrix() const;
 
     void DrawPixel(int x, int y, const wxColour& color, int thickness = 0);
     void DrawLine(const Vec4& p0, const Vec4& p1, const wxColour& color, int thickness = 0);
@@ -40,15 +41,17 @@ public:
         const Mat4& projection, const Vec4& color);
 
 private:
-    void BuildToScreenMatrix();
-    Vec4 GetStbColor(unsigned char* data, unsigned numChannels, int x, int y, int width);
-    void ScanConvert(std::vector<Edge>& poly, wxColour& color, 
+    void buildToScreenMatrix();
+    void buildToScreenInverseMatrix();
+    Vec4 getStbColor(unsigned char* data, unsigned numChannels, int x, int y, int width);
+    void scanConvert(std::vector<Edge>& poly, wxColour& color, 
         const Vec4& polyCenter, const Vec4& polyNormal);
 
 private:
     int m_Width;
     int m_Height;
     Mat4 m_ToScreen;
+    Mat4 m_ToScreenInverse;
 
     wxDC* m_DC;
     double* m_ZBuffer;

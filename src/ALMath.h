@@ -12,6 +12,9 @@ struct Vec4Line
 {
 	Vec4 P1;
 	Vec4 P2;
+
+	Vec4Line(const Vec4& p1 = Vec4(0.0), const Vec4& p2 = Vec4(0.0)) 
+		: P1(p1), P2(p2) {}
 };
 
 inline bool IsMinDbl(double a, double b)

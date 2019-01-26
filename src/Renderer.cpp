@@ -21,7 +21,7 @@ void Renderer::SetDeviceContext(wxDC* dc)
 void Renderer::SetHeight(int height)
 {
 	m_Height = height;
-    BuildToScreenMatrix();
+    buildToScreenMatrix();
 }
 
 int Renderer::GetHeight() const
@@ -32,7 +32,7 @@ int Renderer::GetHeight() const
 void Renderer::SetWidth(int width)
 {
 	m_Width = width;
-    BuildToScreenMatrix();
+    buildToScreenMatrix();
 }
 
 int Renderer::GetWidth() const
@@ -52,6 +52,11 @@ double Renderer::GetAspectRatio() const
 const Mat4& Renderer::GetToScreenMatrix() const
 {
     return m_ToScreen;
+}
+
+const Mat4& Renderer::GetToScreenInverseMatrix() const
+{
+    return m_ToScreenInverse;
 }
 
 void Renderer::DrawPixel(int x, int y, const wxColour& color, int thickness)
@@ -197,7 +202,7 @@ void Renderer::DrawBackgroundImage(const std::string& filename, bool stretch,
                     int vInt = (int)round(v);
                     int wInt = (int)round(w);
 
-                    Vec4 colorVec = GetStbColor(data, numChannels, vInt, wInt, width);
+                    Vec4 colorVec = getStbColor(data, numChannels, vInt, wInt, width);
 
                     wxColour color((unsigned char)colorVec[0], (unsigned char)colorVec[1], (unsigned char)colorVec[2]);
                     DrawPixel(x, y, color);
@@ -214,10 +219,10 @@ void Renderer::DrawBackgroundImage(const std::string& filename, bool stretch,
                     int x1 = MinInt(x0 + 1, m_Width);
                     int y1 = MinInt(y0 + 1, m_Height);
 
-                    Vec4 color00 = GetStbColor(data, numChannels, x0, y0, width);
-                    Vec4 color01 = GetStbColor(data, numChannels, x0, y1, width);
-                    Vec4 color10 = GetStbColor(data, numChannels, x1, y0, width);
-                    Vec4 color11 = GetStbColor(data, numChannels, x1, y1, width);
+                    Vec4 color00 = getStbColor(data, numChannels, x0, y0, width);
+                    Vec4 color01 = getStbColor(data, numChannels, x0, y1, width);
+                    Vec4 color10 = getStbColor(data, numChannels, x1, y0, width);
+                    Vec4 color11 = getStbColor(data, numChannels, x1, y1, width);
 
                     Vec4 color0 = color00 * (((double)x1 - v) / (double)(x1 - x0)) +
                         color10 * ((v - (double)x0) / (double)(x1 - x0));
@@ -242,7 +247,7 @@ void Renderer::DrawBackgroundImage(const std::string& filename, bool stretch,
                 int v = x % width;
                 int w = y % height;
                 
-                Vec4 colorVec = GetStbColor(data, numChannels, v, w, width);
+                Vec4 colorVec = getStbColor(data, numChannels, v, w, width);
 
                 wxColour color((unsigned char)colorVec[0], (unsigned char)colorVec[1], (unsigned char)colorVec[2]);
                 DrawPixel(x, y, color);
@@ -253,18 +258,34 @@ void Renderer::DrawBackgroundImage(const std::string& filename, bool stretch,
     stbi_image_free(data);
 }
 
-void Renderer::BuildToScreenMatrix()
+void Renderer::buildToScreenMatrix()
 {
     Mat4 result;
     result[0][0] = m_Width / 2.0;
     result[1][1] = m_Height / 2.0;
+    result[2][2] = 1.0;
     result[3][0] = (m_Width - 1) / 2.0;
     result[3][1] = (m_Height - 1) / 2.0;
 
     m_ToScreen = result;
+
+    buildToScreenInverseMatrix();
 }
 
-Vec4 Renderer::GetStbColor(unsigned char* data, unsigned numChannels, int x, int y, int width)
+void Renderer::buildToScreenInverseMatrix()
+{
+    Mat4 result;
+    result[0][0] = 1.0 / m_ToScreen[0][0];
+    result[1][1] = 1.0 / m_ToScreen[1][1];
+    result[2][2] = 1.0;
+    result[3][3] = 1.0;
+    result[3][0] = -m_ToScreen[3][0] / m_ToScreen[0][0];
+    result[3][1] = -m_ToScreen[3][1] / m_ToScreen[1][1];
+
+    m_ToScreenInverse = result;
+}
+
+Vec4 Renderer::getStbColor(unsigned char* data, unsigned numChannels, int x, int y, int width)
 {
     Vec4 color;
     unsigned char* pixelOffset = data + (x + width * y) * numChannels;
@@ -326,7 +347,7 @@ void Renderer::FillPolygon(Model* model, Polygon* p, const Mat4& camTransform,
     Mat4 objectToWorld = model->GetObjectToWorldTransform();
     Mat4 viewTransform = model->GetViewTransform();
 
-    // Build Edges and send to ScanConvert
+    // Build Edges and send to scanConvert
     std::vector<Edge> poly;
     for (unsigned int i = 0; i < p->Vertices.size(); i++)
     {
@@ -378,10 +399,10 @@ void Renderer::FillPolygon(Model* model, Polygon* p, const Mat4& camTransform,
     Vec4 polyCenter = p->Center * objectToWorld * camTransform * viewTransform;
     Vec4 polyNormal = p->Normal * objectToWorld * camTransform * viewTransform;
     wxColour colorToSC((unsigned int)color[0], (unsigned int)color[1], (unsigned int)color[2]);
-    ScanConvert(poly, colorToSC, polyCenter, polyNormal);
+    scanConvert(poly, colorToSC, polyCenter, polyNormal);
 }
 
-void Renderer::ScanConvert(std::vector<Edge>& poly, wxColour& color, const Vec4& polyCenter, const Vec4& polyNormal)
+void Renderer::scanConvert(std::vector<Edge>& poly, wxColour& color, const Vec4& polyCenter, const Vec4& polyNormal)
 {
 	assert(poly.size() > 2);
     

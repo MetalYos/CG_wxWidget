@@ -87,6 +87,9 @@ void MainWindow::OnUpdateUI(wxUpdateUIEvent& event)
         case ID_VIEW_BACKGROUND_INTERPOLATION_BILINEAR:
             OnBackgroundInterpolationBilinearUI(event);
             break;
+        case ID_ACTION_SELECT:
+            OnSelectSelectUI(event);
+            break;
         case ID_ACTION_TRANSLATE:
             OnSelectTranslateUI(event);
             break;
@@ -230,6 +233,11 @@ void MainWindow::OnBackgroundInterpolationBilinearUI(wxUpdateUIEvent& event)
 void MainWindow::OnChangeAction(wxCommandEvent& event)
 {
     Settings::SelectedAction = event.GetId();
+}
+
+void MainWindow::OnSelectSelectUI(wxUpdateUIEvent& event)
+{
+    event.Check(Settings::SelectedAction == ID_ACTION_SELECT);
 }
 
 void MainWindow::OnSelectTranslateUI(wxUpdateUIEvent& event)
@@ -397,6 +405,7 @@ void MainWindow::CreateToolBar()
     wxBitmap ortho(wxT("icons/orthographic.png"), wxBITMAP_TYPE_PNG);
     wxBitmap persp(wxT("icons/perspective.png"), wxBITMAP_TYPE_PNG);
     wxBitmap backface(wxT("icons/back_face.png"), wxBITMAP_TYPE_PNG);
+    wxBitmap select(wxT("icons/select.png"), wxBITMAP_TYPE_PNG);
     wxBitmap translate(wxT("icons/translate.png"), wxBITMAP_TYPE_PNG);
     wxBitmap scale(wxT("icons/scale.png"), wxBITMAP_TYPE_PNG);
     wxBitmap rotate(wxT("icons/rotate.png"), wxBITMAP_TYPE_PNG);
@@ -422,6 +431,7 @@ void MainWindow::CreateToolBar()
     toolbar->AddCheckTool(ID_VIEW_PERSP, wxT("Switch to Perspective Projection"), persp);
     toolbar->AddCheckTool(ID_VIEW_BACKFACE, wxT("Enable/Disable BackFace Culling"), backface);
     toolbar->AddSeparator();
+    toolbar->AddCheckTool(ID_ACTION_SELECT, wxT("Select"), select);
     toolbar->AddCheckTool(ID_ACTION_TRANSLATE, wxT("Translate"), translate);
     toolbar->AddCheckTool(ID_ACTION_SCALE, wxT("Scale"), scale);
     toolbar->AddCheckTool(ID_ACTION_ROTATE, wxT("Rotate"), rotate);
@@ -473,10 +483,13 @@ wxMenu* MainWindow::CreateFileMenu()
 wxMenu* MainWindow::CreateActionsMenu()
 {
     wxMenu* actions = new wxMenu();
+    actions->AppendCheckItem(ID_ACTION_SELECT, wxT("&Select"));
+    Connect(ID_ACTION_SELECT, wxEVT_COMMAND_MENU_SELECTED,
+        wxCommandEventHandler(MainWindow::OnChangeAction));
     actions->AppendCheckItem(ID_ACTION_TRANSLATE, wxT("&Translte"));
     Connect(ID_ACTION_TRANSLATE, wxEVT_COMMAND_MENU_SELECTED,
         wxCommandEventHandler(MainWindow::OnChangeAction));
-    actions->AppendCheckItem(ID_ACTION_SCALE, wxT("&Scale"));
+    actions->AppendCheckItem(ID_ACTION_SCALE, wxT("S&cale"));
     Connect(ID_ACTION_SCALE, wxEVT_COMMAND_MENU_SELECTED,
         wxCommandEventHandler(MainWindow::OnChangeAction));
     actions->AppendCheckItem(ID_ACTION_ROTATE, wxT("&Rotate"));

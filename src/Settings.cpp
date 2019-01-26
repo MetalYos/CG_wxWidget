@@ -4,7 +4,7 @@ double Settings::CameraFrameOffset = 1.3;
 bool Settings::IsBoundingBoxOn = false;
 bool Settings::IsBoundingBoxGeo = false;
 bool Settings::IsBackFaceCullingEnabled = true;
-int Settings::SelectedAction = ID_ACTION_TRANSLATE;
+int Settings::SelectedAction = ID_ACTION_SELECT;
 bool Settings::SelectedAxis[3] { true, false, false };
 int Settings::SelectedSpace = ID_SPACE_OBJECT;
 double Settings::MouseSensitivity[3] { 100.0, 100.0, 20.0 }; // Translate, Scale, Rotate

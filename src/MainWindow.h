@@ -36,6 +36,7 @@ public:
 
     // Action option events
     void OnChangeAction(wxCommandEvent& event);
+    void OnSelectSelectUI(wxUpdateUIEvent& event);
     void OnSelectTranslateUI(wxUpdateUIEvent& event);
     void OnSelectScaleUI(wxUpdateUIEvent& event);
     void OnSelectRotateUI(wxUpdateUIEvent& event);

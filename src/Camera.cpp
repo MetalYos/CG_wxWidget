@@ -8,7 +8,12 @@ Camera::Camera()
 
 const Mat4& Camera::GetProjection() const
 {
-    return projection;
+    return ((isPerspective) ? perspProjection : orthoProjection);
+}
+
+const Mat4& Camera::GetInverseProjection() const
+{
+    return ((isPerspective) ? perspInverseProjection : orthoInverseProjection);
 }
 
 void Camera::SetOrthographic(double left, double right, double top, double bottom,
@@ -16,12 +21,12 @@ void Camera::SetOrthographic(double left, double right, double top, double botto
 {
     // Create OpenGL Orthographic Matrix
     Mat4 result;
-    result[0][0] = 2.0 / (right - left);
-    result[1][1] = 2.0 / (top - bottom);
+    result[0][0] = -2.0 / (right - left);
+    result[1][1] = -2.0 / (top - bottom);
     result[2][2] = -2.0 / (far - near);
-    result[0][3] = -(right + left) / (right - left);
-    result[1][3] = -(top + bottom) / (top - bottom);
-    result[2][3] = -(far + near) / (far - near);
+    result[0][3] = (right + left) / (right - left);
+    result[1][3] = (top + bottom) / (top - bottom);
+    result[2][3] = (far + near) / (far - near);
 
     // Transform matrix to be row major
     result.Transpose();
@@ -36,8 +41,10 @@ void Camera::SetOrthographic(double left, double right, double top, double botto
 
     // Set projection to be the newly created matrix
     orthoProjection = result;
-    projection = result;
     isPerspective = false;
+
+    // Build Inverse projection matrix
+    buildInverseOrthographic(left, right, top, bottom, near, far);
 }
 
 void Camera::SetOrthographic(double width, double aspectRatio, double near, double far)
@@ -48,6 +55,24 @@ void Camera::SetOrthographic(double width, double aspectRatio, double near, doub
     // Set Orthographic using the regular matrix
     SetOrthographic(-width / 2.0, width / 2.0, height / 2.0, -height / 2.0,
         near, far);
+}
+
+void Camera::buildInverseOrthographic(double left, double right, double top, double bottom,
+    double near, double far)
+{
+    // Create OpenGL Orthographic Inverse Matrix
+    Mat4 result;
+    result[0][0] = -(right - left) / 2.0;
+    result[1][1] = -(top - bottom) / 2.0;
+    result[2][2] = -(far - near) /  2.0;
+    result[0][3] = (right + left) / 2.0;
+    result[1][3] = (top + bottom) / 2.0;
+    result[2][3] = (far + near) / 2.0;
+
+    // Transform matrix to be row major
+    result.Transpose();
+
+    orthoInverseProjection = result;
 }
 
 void Camera::SetPerspective(double left, double right, double top, double bottom,
@@ -79,8 +104,10 @@ void Camera::SetPerspective(double left, double right, double top, double bottom
 
     // Set projection to be the newly created matrix
     perspProjection = result;
-    projection = result;
     isPerspective = true;
+
+    // Build Inverse projection matrix
+    buildInversePerspective(left, right, top, bottom, near, far);
 }
 
 void Camera::SetPerspective(double fov, double aspectRatio, double near, double far)
@@ -139,7 +166,7 @@ void Camera::RotateCamera(double yawOffset, double pitchOffset)
     forward[0] = cos(ToRadians(camParams.Yaw)) * cos(ToRadians(camParams.Pitch));
     forward[1] = sin(ToRadians(camParams.Pitch));
     forward[2] = sin(ToRadians(camParams.Yaw)) * cos(ToRadians(camParams.Pitch));
-    LookAt(camParams.Eye, forward + camParams.Eye, camParams.WorldUp);
+    LookAt(camParams.Eye, -forward + camParams.Eye, camParams.WorldUp);
 }
 
 void Camera::ZoomCamera(double zoomOffset)
@@ -153,8 +180,8 @@ void Camera::ZoomCamera(double zoomOffset)
         SetPerspective(fov, perspParams.AspectRatio, perspParams.Near, perspParams.Far);
     else
     {
-        projection = Mat4::Scale(1.0 - zoomOffset / Settings::MouseSensitivity[1]) * 
-            projection;
+        orthoProjection = Mat4::Scale(1.0 - zoomOffset / Settings::MouseSensitivity[1]) * 
+            orthoProjection;
     }
 }
 
@@ -170,7 +197,7 @@ void Camera::PanCamera(double xOffset, double yOffset)
     Vec4 at = eye - forward;
     at[3] = 1.0;
 
-    LookAt(eye, at, camParams.Up);
+    LookAt(eye, at, camParams.WorldUp);
 }
 
 const OrthographicParameters& Camera::GetOrthographicParameters() const
@@ -195,19 +222,30 @@ bool Camera::IsPerspective() const
 
 void Camera::SwitchToProjection(bool perspective)
 {
-    if (perspective && !isPerspective)
-    {
-        projection = perspProjection;
-        isPerspective = true;
-    }
-    if(!perspective && isPerspective)
-    {
-        projection = orthoProjection;
-        isPerspective = false;
-    }
+    isPerspective = perspective;
 }
 
 const Mat4& Camera::GetWorldToViewTransform() const
 {
     return worldToView;
+}
+
+void Camera::buildInversePerspective(double left, double right, double top, double bottom,
+    double near, double far)
+{
+    // Create OpenGL Perspective Inverse Matrix
+    Mat4 result;
+    result[0][0] = (right - left) / (2.0 * near);
+    result[1][1] = (top - bottom) / (2.0 * near);
+    result[2][2] = 0.0;
+    result[3][3] = (far + near) / (2 * far * near);
+    result[0][3] = (right + left) / (2 * near);
+    result[1][3] = (top + bottom) / (2 * near);
+    result[2][3] = -1.0;
+    result[3][2] = -(far - near) / (2.0 * far * near);
+
+    // Transform matrix to be row major
+    result.Transpose();
+
+    perspInverseProjection = result;
 }
